@@ -24,7 +24,7 @@ struct S_args{
 int main(int argc, char **argv){
 
     struct S_args *args;
-    char *command, *name, *object, *net, bootIP, bootTCP;
+    char *command, *name, *object, *net, *bootIP, *bootTCP;
     int *id;
     short int c;
 
@@ -40,59 +40,71 @@ int main(int argc, char **argv){
 
     while (!strcmp(command,"exit")){
 
-        if(1==scanf("%s",command)){         /*TODO - AQUI NÃO DEVIA SER >1? OU OS OUTROS ARGUMENTOS SÃO DADOS A SEGUIR*/
+        switch (CommandChoice(command)):
 
-            switch (command[0]) {
-
-                case 'j':          //Join
-                    net=malloc(sizeof()/*TODO*/);
-                    bootIP=(char *) malloc(sizeof(IPSIZE));
-                    bootTCP=(char *) malloc(sizeof(IPSIZE));
-                    c=scanf("%s %d %s %s",net,id,bootIP,bootTCP);
-                    if (c==2) join(net,id); //Possible use of variable argument number function?
-                    else if (c==4) joinNS(net,id,bootIP,bootTCP);
-                    else printf("Undefined Arguments, plz input net, id, bootIP and bootTCP");
-                    break;
-
-                case 'c':           //Create an object that contains the id of node and its subname
-                    //itoa(id, object, 10);
-                    strcat(object, '.');
-
-
-                    break;
-                case 'g':       //Starts search for object with the argument name
-                    break;
-                case 's':       //Show topology, routing or cache
-                    switch (command[1]) {
-                        case 't':
-                            topology();
-                            break;
-                        case 'r':
-                            routing();
-                            break;
-                        case 'c':
-                            cache();
-                            break;
-                        default:
-                            printf("Tell me what to show!");
-                    }
-
-                    break;
-                case 'l':       //Leave node
-                    break;
-                default:
-                    printf("Unknown Command");
-                    break;
-            }
-        } else printf("PLZ INPUT SOMETHING");
-
+        case 1: //Join command
+            net=malloc(sizeof()/*TODO*/);
+            bootIP=(char *) malloc(sizeof(IPSIZE));
+            bootTCP=(char *) malloc(sizeof(IPSIZE));
+            c=scanf("%s %d %s %s",net,id,bootIP,bootTCP);
+            if (c==2) join(net,id); //Possible use of variable argument number function?
+            else if (c==4) joinDS(net,id,bootIP,bootTCP);
+            else printf("Undefined Arguments, plz input net, id, bootIP and bootTCP");
+            break;
+        case 2: //create
+            //Create an object that contains the id of node and its subname
+            //itoa(id, object, 10);
+            strcat(object, '.');
+            break;
+        case 3: //get
+            break;
+        case 4: //Show topology
+            break;
+        case 5: //Show routing
+            break;
+        case 6: //show cache
+            break;
+        case 7: //leave
+            break;
+        case 8: //exit
+            break;
+        case -1:    //unknown command
+            break;
+        default:    //undefined behaviour?
+            break;
 
 
 
     }
 
+
     free(args);
     free(command);
     exit(0);
+
+}
+
+int commandChoice(char *command){
+
+    if(scanf("%s ",command)==1){
+
+       if (strcmp(command,"join")){
+           return 1;
+       }else if (strcmp(command,"create")){
+           return 2;
+       }else if (strcmp(command,"get")){
+           return 3;
+       }else if ((strcmp(command,"show topology"))||(strcmp(command,"st"))){
+           return 4;
+       }else if ((strcmp(command,"show routing"))||(strcmp(command,"sr"))){
+           return 5;
+       }else if ((strcmp(command,"show cache"))||(strcmp(command,"sc"))) {
+           return 6;
+       }else if (strcmp(command,"leave")){
+           return 7;
+       }else if ((strcmp(command,"exit")){
+           return 8;
+       }else return -1;
+    }
 
 }

@@ -4,8 +4,22 @@
 
 #include "UDP.h"
 
-int join(char *net, short int id){
+int join(char *net, int id){
 
-    UDPget(net)
+    UDPget(net);
+    UDPreg(net,id);
+
+}
+
+int joinDS(char *net, int id,char *bootIP, char *bootTCP){
+
+    //TODO
+    UDPreg(net,id);
+
+}
+
+int UDPget(net){
+
+
 
 }
