@@ -4,3 +4,8 @@
 
 #include "UDP.h"
 
+int join(char *net, short int id){
+
+    UDPget(net)
+
+}
