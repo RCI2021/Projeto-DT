@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#Author : António Vidais
+
+rm proj01.zip
+
+zip proj01.zip *.c *.h Makefile
+
+echo Rezipped ndn Project
