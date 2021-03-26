@@ -5,6 +5,10 @@
 #ifndef PROJETO_DT_UDP_H
 #define PROJETO_DT_UDP_H
 
-#define UDPSERVER 193.136.138.142:5900
+#define UDPSERVER "tejo.tecnico.ulisboa.pt"
+#define UDPPORT 59000
+
+
+int UDPget(char *buffer);
 
 #endif //PROJETO_DT_UDP_H
