@@ -7,7 +7,7 @@
 #define DEBUG
 #define BUFFERSIZE 128
 //UDP
-#define NODESLIST "NODESLIST %d"
+#define NODESLIST "NODESLIST "
 
 //TCP
 

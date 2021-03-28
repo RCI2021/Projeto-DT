@@ -40,8 +40,9 @@ int UDPget(char *buffer) {
     int fd, errcode;
     socklen_t addrlen;
     ssize_t n;
-    char host[NI_MAXHOST], service[NI_MAXSERV];
+    char host[NI_MAXHOST], service[NI_MAXSERV],*message;
 
+    if (message= (char *) malloc (sizeof (NODESLIST)+sizeof (net))) return -1;
 
     if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) return -1;
 
@@ -54,7 +55,9 @@ int UDPget(char *buffer) {
         return -1;
     }
 
-    n = sendto(fd, NODESLIST, sizeof(NODESLIST), 0, res->ai_addr, res->ai_addrlen);
+    message=strcat(NODESLIST,net);
+
+    n = sendto(fd, message, sizeof(message), 0, res->ai_addr, res->ai_addrlen);
     if (n == -1) {
         printf("Error sendto");
         close(fd);
@@ -76,6 +79,7 @@ int UDPget(char *buffer) {
 
     } else printf("sent by: [%s:%s]\n", host, service); //LAMP
 
+    free(message);
     close(fd);
     freeaddrinfo(res);
     return 0;
