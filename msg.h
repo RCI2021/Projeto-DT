@@ -7,8 +7,11 @@
 #define DEBUG
 #define BUFFERSIZE 128
 //UDP
-#define NODESLIST "NODESLIST "
-
+#define NODESLIST "NODESLIST"
+#define REG "REG"
+#define UNREG "UNREG"
+#define OKREG "OKREG"
+#define OKUNREG "OKUNREG"
 //TCP
 
 

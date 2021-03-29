@@ -43,7 +43,7 @@ int main(int argc, char **argv){
         switch (CommandChoice(command)):
 
         case 1: //Join command
-            net=malloc(sizeof()/*TODO*/);
+            net = (int *) malloc(sizeof(int));
             bootIP=(char *) malloc(sizeof(IPSIZE));
             bootTCP=(char *) malloc(sizeof(IPSIZE));
             c=scanf("%s %d %s %s",net,id,bootIP,bootTCP);

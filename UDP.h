@@ -8,7 +8,10 @@
 #define UDPSERVER "tejo.tecnico.ulisboa.pt"
 #define UDPPORT 59000
 
+int joinAlloc(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp);
 
-int UDPget(char *buffer);
+void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp);
+
+int UDPcomms(char *message, char *buffer);
 
 #endif //PROJETO_DT_UDP_H
