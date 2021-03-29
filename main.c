@@ -28,10 +28,46 @@ int main(int argc, char **argv){
     int *id;
     short int c;
 
+    //VARIABLES USED FOR VERIFICATION
+    unsigned int b1, b2, b3, b4, port;
+    char aux[128];
+    //
+
     if((args=(struct S_args *) malloc(sizeof(struct S_args)))==NULL) exit(137); // Allocating mem for Arguments Struct
     if((command=(char *) malloc(sizeof(char)*7))==NULL) exit(137);  // Allocating mem for command string
     if((name=(char *) malloc(sizeof(char)*7))==NULL) exit(137);  // Allocating mem for name string
     if((id=(int *) malloc(sizeof(int)))==NULL) exit(137);  // Allocating mem for id integer
+
+   if(argc != 5)
+   {
+       printf("Not enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
+       exit(1);
+   }
+   //Checks argv[1] for IP Address
+   if(sscanf(argv[1], "%u.%u.%u.%u%s", &b1, &b2, &b3, &b4, aux) != 4 || b1>255 || b2>255 || b3>255 || b4>255)
+   {
+       printf("Error: Bad <ip_addr>\n");
+       exit(1);
+   }
+   //Checks argv[2] for TCP Port
+   if(sscanf(argv[2], "%u%s", &port, aux) != 1 || port > 65535)     //TODO PORT IS args->TCP??
+   {
+       printf("Error: Bad <tcp_port>\n");
+       exit(1);
+   }
+   //Checks argv[3] for IP Address of Node Server
+    if(sscanf(argv[3], "%u.%u.%u.%u%s", &b1, &b2, &b3, &b4, aux) != 4 || b1>255 || b2>255 || b3>255 || b4>255)  //TODO b values only used for verification or saved for later?
+    {
+        printf("Error: Bad <reg_ip_addr>\n");
+        exit(1);
+    }
+    //Checks argv[4] for UDP Port of Node Server
+    if(sscanf(argv[2], "%u%s", &port, aux) != 1 || port > 65535)     //TODO PORT IS args->regUDP??
+    {
+        printf("Error: Bad <tcp_port>\n");
+        exit(1);
+    }
+
 
     strcpy(args->IP,argv[1]);
     strcpy(args->TCP,argv[2]);

@@ -5,7 +5,7 @@
 #ifndef PROJETO_DT_MSG_H
 #define PROJETO_DT_MSG_H
 #define DEBUG
-#define BUFFERSIZE 128
+#define BUFFERSIZE 1024
 //UDP
 #define NODESLIST "NODESLIST"
 #define REG "REG"
