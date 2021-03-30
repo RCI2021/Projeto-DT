@@ -12,7 +12,17 @@
 #define UNREG "UNREG"
 #define OKREG "OKREG"
 #define OKUNREG "OKUNREG"
+#define TIMEOUT 300
 //TCP
 
 
+
+//Database
+struct database {
+    char *name[DBSIZE];
+    int last_used;
+    //FILE something something
+};
+#define MAXNAMESIZE 128
+#define DBSIZE 2
 #endif //PROJETO_DT_MSG_H

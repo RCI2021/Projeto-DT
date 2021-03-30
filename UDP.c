@@ -11,89 +11,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
-#include "msg.h"
+#include "client.h"
 #include "UDP.h"
 
 enum state {
     reg, unreg, list, connect
 };
 
-int join(char *command) {
-
-    char *buffer, *message, *net, *id, *tcp, *nodeip, *nodetcp;
-
-    state = reg;
-
-    if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
-
-
-    switch state {
-        case reg:
-            sscanf(command, "%*s %s %s %s", net, id, tcp);
-            ssprintf(message, "%s %s %s %s", REG, net, id, tcp);
-            if (UDPcomms(message, buffer) != 0) state = error;
-            if (!strcmp(buffer, OKREG)) state = error;
-            else state = list;
-            break;
-
-        case list:
-            ssprintf(message, "%s %s", NODESLIST, net)
-            if (UDPcomms(message, buffer) != 0) state = error;
-            if (sscanf(buffer, "NODESLIST %*d\n %s %s", nodeip, nodetcp) != 2) state = error;
-            else state = advertise;
-            break;
-
-        case connect:
-            break;
-
-        case error:
-            perror("Error during Nodes Server Operations");
-            joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
-            break;
-    }
-
-    joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
-    return 0;
-}
-
-int joinAlloc(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp) {
-
-    if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((message = (char *) malloc(sizeof NODESLIST + sizeof net)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((net = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((ip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((tcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((nodeip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((nodetcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-
-    return 0;
-}
-
-void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp) {
-
-    free(buffer);
-    free(message);
-    free(net);
-    free(id);
-    free(tcp);
-    free(nodeip);
-    free(nodetcp);
-
-}
-
-int joinDS(char *net, int id, char *bootIP, char *bootTCP) {
-
-    //TODO
-    UDPreg(net, id);
-
-}
 
 int UDPcomms(char *message, char *buffer) {
 
@@ -121,17 +45,19 @@ int UDPcomms(char *message, char *buffer) {
         close(serverfd);
         freeaddrinfo(res);
         return -1;
-
     }
 
     FD_ZERO(&r_fd);
     FD_SET(0, &r_fd);
     FD_SET(serverfd, &r_fd);
 
-    retval = select( ?, r_fd, NULL, NULL, &tv);
+    tv.time_t = TIMEOUT;
+
+    retval = select(serverfd + 1, r_fd, NULL, NULL, &tv);
 
     if (retval == -1) perror("Select Error");
     return -1;
+
     else if (FD_ISSET(0, &r_fd)) {
 
         n = fgets(buffer, BUFFERSIZE, stdin);
@@ -141,17 +67,13 @@ int UDPcomms(char *message, char *buffer) {
         }
 
     } else if (FD_ISSET(serverfd, &r_fd)) {
-
-
+        addrlen = sizeof addr;
+        if ((n = recvfrom(serverfd, buffer, BUFFERSIZE, 0, &addr, &addrlen)) == -1)
+            perror("Error retriving msg from UDP");
+        return -1; //How to end select? TODO
+        buffer[n] = '\0';
     }
 
-    addrlen = sizeof addr;
-    if ((n = recvfrom(serverfd, buffer, BUFFERSIZE, 0, &addr, &addrlen)) == -1) perror("Error retriving msg from UDP");
-    return -1;
-
-    buffer[n] = '\0';
-
-    free(message);
     close(fd);
     freeaddrinfo(res);
     return 0;
