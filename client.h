@@ -19,7 +19,7 @@
 
 //Database
 struct database {
-    char *name[DBSIZE];
+    char *name[DBSIZE];//todo
     int last_used;
     //FILE something something
 };

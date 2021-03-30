@@ -8,8 +8,8 @@
 
 int join(char *command) {
 
-    char *buffer, *message, *net, *id, *tcp, *nodeip, *nodetcp;
-
+    char *buffer, *message, *net, *nodeip, *nodetcp;
+    extern char *id, *tcp;
     state = reg;
 
     if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
@@ -76,7 +76,21 @@ void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char 
 }
 
 
-int create(char *command) {
+int leave() {
 
+    char *message, *buffer;
+    bool err;
+
+    if ((message = (char *) malloc(sizeof UNREG)) == NULL) return -137;
+    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -137;
+
+    ssprintf(message, UNREG);
+    UDPcomms(message, buffer); //TODO have UDP & ServerIp as extern
+    if (!strcmp(buffer, UNREG)) perror("UNREG not received");
+    err = TRUE;
+
+    free(message);
+    free(buffer);
+    return (int) err;
 
 }
