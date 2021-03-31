@@ -9,6 +9,7 @@
 int join(char *command) {
 
     char *buffer, *message, *net, *nodeip, *nodetcp;
+
     extern char *id, *tcp;
     state = reg;
 

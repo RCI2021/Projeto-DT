@@ -21,6 +21,10 @@ struct S_args {
 
 int server_IP = 0, server_port = 59000, id; //TODO Pode-se chamar o programa sem dizer qual o Servidor de nós?
 
+int argVerification(struct S_args *args, int argc);
+
+int commandChoice(char *command);
+
 int main(int argc, char **argv) {
 
     struct S_args *args;
@@ -39,36 +43,37 @@ int main(int argc, char **argv) {
     strcpy(args->TCP, argv[2]);
     strcpy(args->regIP, argv[3]);
     strcpy(args->regUDP, argv[4]);
-    argsVerification(args, argc);
+    argVerification(args, argc);
 
     while (!strcmp(command, "exit")) {
 
-        switch (CommandChoice(command)):
-
-        case 1: //Join command
-            join(command);
-        break;
-        case 2: //create
-            create(command);
-        break;
-        case 3: //get
-            break;
-        case 4: //Show topology
-            break;
-        case 5: //Show routing
-            break;
-        case 6: //show cache
-            break;
-        case 7: //leave
-            break;
-        case 8: //exit
-            break;
-        case -1:    //unknown command
-            break;
-        default:    //undefined behaviour?
-            break;
+        switch (commandChoice(command)) {
 
 
+            case 1: //Join command
+                join(command);
+                break;
+            case 2: //create
+                create(command);
+                break;
+            case 3: //get
+                break;
+            case 4: //Show topology
+                break;
+            case 5: //Show routing
+                break;
+            case 6: //show cache
+                break;
+            case 7: //leave
+                break;
+            case 8: //exit
+                break;
+            case -1:    //unknown command
+                break;
+            default:    //undefined behaviour?
+                break;
+
+        }
     }
 
 
@@ -116,25 +121,22 @@ int argVerification(struct S_args *args, int argc) {
 
 int commandChoice(char *command) {
 
-    if (fgets(command, BUFFERSIZE - 1, stdin) == 1) {
-
-        if (strcmp(command, "join")) {
-            return 1;
-        } else if (strcmp(command, "create")) {
-            return 2;
-        } else if (strcmp(command, "get")) {
-            return 3;
-        } else if ((strcmp(command, "show topology")) || (strcmp(command, "st"))) {
-            return 4;
-        } else if ((strcmp(command, "show routing")) || (strcmp(command, "sr"))) {
-            return 5;
-        } else if ((strcmp(command, "show cache")) || (strcmp(command, "sc"))) {
-            return 6;
-        } else if (strcmp(command, "leave")) {
-            return 7;
-        } else if ((strcmp(command, "exit")) {
-            return 8;
-        } else return -1;
-    }
+    if (strcmp(command, "join")) {
+        return 1;
+    } else if (strcmp(command, "create")) {
+        return 2;
+    } else if (strcmp(command, "get")) {
+        return 3;
+    } else if ((strcmp(command, "show topology")) || (strcmp(command, "st"))) {
+        return 4;
+    } else if ((strcmp(command, "show routing")) || (strcmp(command, "sr"))) {
+        return 5;
+    } else if ((strcmp(command, "show cache")) || (strcmp(command, "sc"))) {
+        return 6;
+    } else if (strcmp(command, "leave")) {
+        return 7;
+    } else if (strcmp(command, "exit")) {
+        return 8;
+    } else return -1;
 
 }

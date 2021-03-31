@@ -6,7 +6,8 @@
 #define PROJETO_DT_UDP_H
 
 #define UDPSERVER "tejo.tecnico.ulisboa.pt"
-#define UDPPORT 59000
+#define UDPPORT "59000"
+int server_IP;
 
 int joinAlloc(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp);
 

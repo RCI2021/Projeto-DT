@@ -1,0 +1,1 @@
+gcc    -c -o command.o command.c

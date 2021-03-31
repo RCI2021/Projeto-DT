@@ -1,0 +1,114 @@
+command.c: In function ‘join’:
+command.c:14:5: error: ‘state’ undeclared (first use in this function); did you mean ‘State’?
+   14 |     state = reg;
+      |     ^~~~~
+      |     State
+command.c:14:5: note: each undeclared identifier is reported only once for each function it appears in
+command.c:16:10: warning: implicit declaration of function ‘joinAlloc’ [-Wimplicit-function-declaration]
+   16 |     if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
+      |          ^~~~~~~~~
+command.c:16:83: error: ‘error’ undeclared (first use in this function)
+   16 |     if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
+      |                                                                                   ^~~~~
+command.c:18:12: error: expected ‘(’ before ‘state’
+   18 |     switch state {
+      |            ^~~~~
+      |            (
+command.c: In function ‘joinAlloc’:
+command.c:49:28: warning: implicit declaration of function ‘malloc’ [-Wimplicit-function-declaration]
+   49 |     if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                            ^~~~~~
+command.c:49:28: warning: incompatible implicit declaration of built-in function ‘malloc’
+command.c:7:1: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+    6 | #include "client.h"
+  +++ |+#include <stdlib.h>
+    7 | 
+command.c:49:62: error: ‘NULL’ undeclared (first use in this function)
+   49 |     if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                                                              ^~~~
+command.c:7:1: note: ‘NULL’ is defined in header ‘<stddef.h>’; did you forget to ‘#include <stddef.h>’?
+    6 | #include "client.h"
+  +++ |+#include <stddef.h>
+    7 | 
+command.c:49:68: warning: implicit declaration of function ‘perror’ [-Wimplicit-function-declaration]
+   49 |     if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                                                                    ^~~~~~
+command.c:51:29: warning: incompatible implicit declaration of built-in function ‘malloc’
+   51 |     if ((message = (char *) malloc(sizeof NODESLIST + sizeof net)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                             ^~~~~~
+command.c:51:29: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:53:25: warning: incompatible implicit declaration of built-in function ‘malloc’
+   53 |     if ((net = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                         ^~~~~~
+command.c:53:25: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:55:24: warning: incompatible implicit declaration of built-in function ‘malloc’
+   55 |     if ((ip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                        ^~~~~~
+command.c:55:24: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:57:25: warning: incompatible implicit declaration of built-in function ‘malloc’
+   57 |     if ((tcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                         ^~~~~~
+command.c:57:25: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:59:28: warning: incompatible implicit declaration of built-in function ‘malloc’
+   59 |     if ((nodeip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                            ^~~~~~
+command.c:59:28: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:61:29: warning: incompatible implicit declaration of built-in function ‘malloc’
+   61 |     if ((nodetcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+      |                             ^~~~~~
+command.c:61:29: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c: In function ‘joinFree’:
+command.c:69:5: warning: implicit declaration of function ‘free’ [-Wimplicit-function-declaration]
+   69 |     free(buffer);
+      |     ^~~~
+command.c:69:5: warning: incompatible implicit declaration of built-in function ‘free’
+command.c:69:5: note: include ‘<stdlib.h>’ or provide a declaration of ‘free’
+command.c: In function ‘leave’:
+command.c:83:5: error: unknown type name ‘bool’
+   83 |     bool err;
+      |     ^~~~
+command.c:85:29: warning: incompatible implicit declaration of built-in function ‘malloc’
+   85 |     if ((message = (char *) malloc(sizeof UNREG)) == NULL) return -137;
+      |                             ^~~~~~
+command.c:85:29: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:85:54: error: ‘NULL’ undeclared (first use in this function)
+   85 |     if ((message = (char *) malloc(sizeof UNREG)) == NULL) return -137;
+      |                                                      ^~~~
+command.c:85:54: note: ‘NULL’ is defined in header ‘<stddef.h>’; did you forget to ‘#include <stddef.h>’?
+command.c:86:28: warning: incompatible implicit declaration of built-in function ‘malloc’
+   86 |     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -137;
+      |                            ^~~~~~
+command.c:86:28: note: include ‘<stdlib.h>’ or provide a declaration of ‘malloc’
+command.c:88:5: warning: implicit declaration of function ‘ssprintf’ [-Wimplicit-function-declaration]
+   88 |     ssprintf(message, UNREG);
+      |     ^~~~~~~~
+command.c:89:5: warning: implicit declaration of function ‘UDPcomms’ [-Wimplicit-function-declaration]
+   89 |     UDPcomms(message, buffer); //TODO have UDP & ServerIp as extern
+      |     ^~~~~~~~
+command.c:90:10: warning: implicit declaration of function ‘strcmp’ [-Wimplicit-function-declaration]
+   90 |     if (!strcmp(buffer, UNREG)) perror("UNREG not received");
+      |          ^~~~~~
+command.c:91:11: error: ‘TRUE’ undeclared (first use in this function)
+   91 |     err = TRUE;
+      |           ^~~~
+command.c:93:5: warning: incompatible implicit declaration of built-in function ‘free’
+   93 |     free(message);
+      |     ^~~~
+command.c:93:5: note: include ‘<stdlib.h>’ or provide a declaration of ‘free’
+command.c: In function ‘create’:
+command.c:103:5: warning: implicit declaration of function ‘sscanf’ [-Wimplicit-function-declaration]
+  103 |     sscanf("%*s %s", name);
+      |     ^~~~~~
+command.c:103:5: warning: incompatible implicit declaration of built-in function ‘sscanf’
+command.c:7:1: note: include ‘<stdio.h>’ or provide a declaration of ‘sscanf’
+    6 | #include "client.h"
+  +++ |+#include <stdio.h>
+    7 | 
+command.c:103:5: warning: format not a string literal and no format arguments [-Wformat-security]
+  103 |     sscanf("%*s %s", name);
+      |     ^~~~~~
+command.c:104:28: error: ‘id’ undeclared (first use in this function); did you mean ‘void’?
+  104 |     ssprintf(name, "%d%s", id, subname);
+      |                            ^~
+      |                            void
+make: *** [<builtin>: command.o] Error 1

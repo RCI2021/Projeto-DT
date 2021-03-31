@@ -14,42 +14,51 @@
 #include "client.h"
 #include "UDP.h"
 
-enum state {
-    reg, unreg, list, connect
+enum State {
+    reg, list, error, advertise, done
 };
 
 int join(char *command) {
 
     char *buffer, *message, *net, *id, *tcp, *nodeip, *nodetcp;
-
+    enum State state;
     state = reg;
+
 
     if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
 
-    switch state
-    {
-        case reg:
-            sscanf(command, "%*s %s %s %s", net, id, tcp);
-        ssprintf(message, "%s %s %s %s", REG, net, id, tcp);
-        if (UDPcomms(message, buffer) != 0) state = error;
-        if (!strcmp(buffer, OKREG)) state = error;
-        else state = list;
-        break;
+    while (state != done) {
+        switch (state) {
+            case reg:
+                sscanf(command, "%*s %s %s %s", net, id, tcp);
+                sprintf(message, "%s %s %s %s", REG, net, id, tcp);
+                if (UDPcomms(message, buffer) != 0) state = error;
+                if (!strcmp(buffer, OKREG)) state = error;
+                else state = list;
+                break;
 
-        case list:
-            ssprintf(message, "%s %s", NODESLIST, net)
-        if (UDPcomms(message, buffer) != 0) state = error;
-        if (sscanf(buffer, "NODESLIST %*d\n %s %s", nodeip, nodetcp) != 2) state = error;
-        else state = advertise;
-        break;
+            case list:
+                sprintf(message, "%s %s", NODESLIST, net);
+                if (UDPcomms(message, buffer) != 0) state = error;
+                if (sscanf(buffer, "NODESLIST %*d\n %s %s", nodeip, nodetcp) != 2) state = error;
+                else state = advertise;
+                break;
 
-        case connect:
-            break;
+            case error:
+                perror("Error during Nodes Server Operations");
+                joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
+                state = done;
+                break;
 
-        case error:
-            perror("Error during Nodes Server Operations");
-        joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
-        break;
+            case advertise:
+
+                state = done;
+                break;
+
+            case done:
+                break;
+
+        }
     }
 
     joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
@@ -91,7 +100,8 @@ void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char 
 int UDPcomms(char *message, char *buffer) {
 
     struct addrinfo hints, *res;
-    ind serverfd, errcode;
+    int serverfd, errcode;
+    struct sockaddr addr;
     socklen_t addrlen;
     ssize_t n;
     fd_set r_fd;
@@ -108,7 +118,7 @@ int UDPcomms(char *message, char *buffer) {
     hints.ai_socktype = SOCK_DGRAM;
 
 
-    errcode = getaddrinfo(UDPSERVER, server_port, &hints, &res);
+    errcode = getaddrinfo(UDPSERVER, UDPPORT, &hints, &res);
     if (errcode != 0) {
         perror("Error addrinfo UDP");
         return -1;
@@ -126,16 +136,16 @@ int UDPcomms(char *message, char *buffer) {
     FD_SET(0, &r_fd);
     FD_SET(serverfd, &r_fd);
 
-    tv.time_t = TIMEOUT;
+    tv.tv_sec = TIMEOUT;
 
     retval = select(serverfd + 1, &r_fd, (fd_set *) NULL, (fd_set *) NULL, &tv);
 
-    if (retval < 1) perror("Select Error");
-    return -1;
+    if (retval < 1) {
+        perror("Select Error");
+        return -1;
+    } else if (FD_ISSET(0, &r_fd)) {
 
-    else if (FD_ISSET(0, &r_fd)) {
-
-        n = fgets(buffer, BUFFERSIZE, stdin); //TODO Há problema em usar o mesmo buffer para os 2 ?
+        fgets(buffer, BUFFERSIZE, stdin); //TODO Há problema em usar o mesmo buffer para os 2 ?
         buffer[n] = '\0';
 
     } else if (FD_ISSET(serverfd, &r_fd)) {
@@ -146,7 +156,7 @@ int UDPcomms(char *message, char *buffer) {
         buffer[n] = '\0';
     }
 
-    close(fd);
+    close(serverfd);
     freeaddrinfo(res);
     return 0;
 }

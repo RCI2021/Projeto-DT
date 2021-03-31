@@ -4,12 +4,28 @@
 
 #include "database.h"
 #include "client.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include "UDP.h"
+
+
+struct database {
+    char *name[DBSIZE];//todo
+    bool last_used;
+    //FILE something something
+};
 
 enum dbSwitch {
     Local, Cache
 };
 
-int data_Init(int size) {
+int data_Init() {
 
     if (local = (struct database *) malloc(sizeof(struct database)) == NULL) return -1;
     if (cache = (struct database *) malloc(sizeof(struct database)) == NULL) return -1;
@@ -19,32 +35,32 @@ void add_Item(char *new, enum dbSwitch sw) {
 
     if (sw == Local) {
 
-        if ((local->name[0] == NULL) || (local->last_used == 1)) {
+        if ((local->name[0] == NULL) || (local->last_used == true)) { //TODO local só tem 2 posições ou se é ilimitado?
 
             local->name[0] = new;
-            local->last_used = 0;
+            local->last_used = false;
 
-        } else if ((local->name[1] == NULL) || (local->last_used == 0)) {
+        } else if ((local->name[1] == NULL) || (local->last_used == false)) {
 
             local->name[1] = new;
-            local->last_used = TRUE;
+            local->last_used = true;
         }
-    } else {
-
-        if ((cache->name[0] == NULL) || (cache->last_used == 1)) {
+    }
+    if ((cache->name[0] == NULL) || (cache->last_used == true)) {
 
         cache->name[0] = new;
-        cache->last_used = FALSE;
+        cache->last_used = false;
 
     } else if ((cache->name[1] == NULL) || (cache->last_used == 0)) {
 
-            cache->name[1] = new;
-            cache->last_used = 1;
-        }
+        cache->name[1] = new;
+        cache->last_used = true;
     }
     return;
 }
 
+
+/*
 void rm_Item(char *rm, enum dbSwitch sw) {
 
     int i;
@@ -62,11 +78,9 @@ void rm_Item(char *rm, enum dbSwitch sw) {
 */
 int get_name(char *search, int id) {
 
-    int *id_aux, res;
+    int id_aux, res, i;
 
-    if ((id_aux = (int *) malloc(sizeof(int))) == NULL) return -137;
-
-    sscanf(search, "%d.%*s", id_aux);
+    sscanf(search, "%d.%*s", &id_aux);
 
     if (id_aux == id) { //TODO
 
@@ -74,15 +88,13 @@ int get_name(char *search, int id) {
             if (strcmp(local->name[i], search)) res = i;
         }
     } else {
-        if strcmp(name_aux, cache->name[0])
-        {
+        if (strcmp(search, cache->name[0])) {
             res = 0;
-        } else if (strcmp(name_aux, cache->name[1])) {
+        } else if (strcmp(search, cache->name[1])) {
             res = 1;
-        } else res = -1
+        } else res = -1;
     }
 
-    free(id_aux):
     return res;
 
 }
