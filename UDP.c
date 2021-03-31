@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
-#include "msg.h"
+#include "client.h"
 #include "UDP.h"
 
 enum state {
@@ -98,15 +98,21 @@ int UDPcomms(char *message, char *buffer) {
     struct timeval tv;
     int retval;
 
-    if ((serverfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) perror("Error creating socket for UDP comms");
-    return -1;
+    if ((serverfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("Error creating socket for UDP comms");
+        return -1;
+    }
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (errcode = (getaddrinfo(UDPSERVER, UDPPORT, &hints, &res)) != 0) perror("Error addrinfo UDP");
-    return -1;
+
+    errcode = getaddrinfo(UDPSERVER, server_port, &hints, &res);
+    if (errcode != 0) {
+        perror("Error addrinfo UDP");
+        return -1;
+    }
 
     if ((n = sendto(serverfd, message, sizeof message, 0, res->ai_addr, res->ai_addrlen)) == -1) {
 
@@ -122,18 +128,15 @@ int UDPcomms(char *message, char *buffer) {
 
     tv.time_t = TIMEOUT;
 
-    retval = select(serverfd + 1, r_fd, NULL, NULL, &tv);
+    retval = select(serverfd + 1, &r_fd, (fd_set *) NULL, (fd_set *) NULL, &tv);
 
-    if (retval == -1) perror("Select Error");
+    if (retval < 1) perror("Select Error");
     return -1;
 
     else if (FD_ISSET(0, &r_fd)) {
 
-        n = fgets(buffer, BUFFERSIZE, stdin);
+        n = fgets(buffer, BUFFERSIZE, stdin); //TODO Há problema em usar o mesmo buffer para os 2 ?
         buffer[n] = '\0';
-        if (!strcmp(buffer, "cancel")) {
-            //CANCEL WAIT
-        }
 
     } else if (FD_ISSET(serverfd, &r_fd)) {
         addrlen = sizeof addr;

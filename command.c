@@ -94,3 +94,13 @@ int leave() {
     return (int) err;
 
 }
+
+int create(char *command) {
+
+    char *subname, *name;
+
+    sscanf("%*s %s", name);
+    ssprintf(name, "%d%s", id, subname);
+
+
+}

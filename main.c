@@ -19,6 +19,8 @@ struct S_args {
     char *regUDP;
 };
 
+int server_IP = 0, server_port = 59000, id; //TODO Pode-se chamar o programa sem dizer qual o Servidor de nós?
+
 int main(int argc, char **argv) {
 
     struct S_args *args;

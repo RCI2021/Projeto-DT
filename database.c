@@ -5,7 +5,6 @@
 #include "database.h"
 #include "client.h"
 
-struct database *local, *cache;
 enum dbSwitch {
     Local, Cache
 };
@@ -28,16 +27,16 @@ void add_Item(char *new, enum dbSwitch sw) {
         } else if ((local->name[1] == NULL) || (local->last_used == 0)) {
 
             local->name[1] = new;
-            local->last_used = 1;
+            local->last_used = TRUE;
         }
     } else {
 
         if ((cache->name[0] == NULL) || (cache->last_used == 1)) {
 
-            cache->name[0] = new;
-            cache->last_used = 0;
+        cache->name[0] = new;
+        cache->last_used = FALSE;
 
-        } else if ((cache->name[1] == NULL) || (cache->last_used == 0)) {
+    } else if ((cache->name[1] == NULL) || (cache->last_used == 0)) {
 
             cache->name[1] = new;
             cache->last_used = 1;
@@ -48,53 +47,32 @@ void add_Item(char *new, enum dbSwitch sw) {
 
 void rm_Item(char *rm, enum dbSwitch sw) {
 
+    int i;
+
     if (sw == Local) {
 
-        if (strcmp(rm, local->name[0]) == 0) {
 
-            free(local->name[0]);
-            local->last_used = 1;
-
-        } else if (strcmp(rm, local->name[1]) == 0) {
-
-            free(local->name[1]);
-            local->last_used = 0;
-        }
     } else {
-
-        if (strcmp(rm, cache->name[0]) == 0) {
-
-            free(cache->name[0]);
-            cache->last_used = 1;
-
-        } else if (strcmp(rm, cache->name[1]) == 0) {
-
-            free(cache->name[1]);
-            cache->last_used = 0;
+        for (i=0;i<DBSIZE;i++){
+            if (strcmp(rm,cache->name[i])) free(cache->name[i]);
         }
     }
     return;
 }
-
+*/
 int get_name(char *search, int id) {
 
     int *id_aux, res;
-    char *name_aux;
 
     if ((id_aux = (int *) malloc(sizeof(int))) == NULL) return -137;
-    if ((name_aux = (char *) malloc(sizeof(char) * MAXNAMESIZE)) == NULL) return -137;
 
-    sscanf(search, "%d.%s", &id_aux, name_aux);
+    sscanf(search, "%d.%*s", id_aux);
 
-    if (id_aux == MYID/*TODO*/) {
+    if (id_aux == id) { //TODO
 
-        if strcmp(name_aux, local->name[0])
-        {
-            res = 0;
-        } else if (strcmp(name_aux, local->name[1])) {
-            res = 1;
-        } else res = -1
-
+        for (i = 0; i < DBSIZE; i++) {
+            if (strcmp(local->name[i], search)) res = i;
+        }
     } else {
         if strcmp(name_aux, cache->name[0])
         {
@@ -105,13 +83,11 @@ int get_name(char *search, int id) {
     }
 
     free(id_aux):
-    free(name_aux);
     return res;
 
 }
 
 void show_cache() {
-    printf("Cache currently stored:\n %s \n %s\nThe last Item used was: %d\n", cache->name[0], cache->name[1],
-           cache->last_used);
+    printf("Cache currently stored:\n1: %s \n2: %s\n", cache->name[0], cache->name[1]);
     return;
 }
