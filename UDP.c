@@ -14,64 +14,58 @@
 #include "client.h"
 #include "UDP.h"
 
-enum State {
-    reg, list, error, advertise, done
-};
 
-int join(char *command) {
+int join_net(char *command, struct S_args *args, struct net_info *netinfo) {
 
-    char *buffer, *message, *net, *id, *tcp, *nodeip, *nodetcp;
+    char *buffer, *message, *id, *tcp, *nodeip, *nodetcp;
+    int net_id;
     enum State state;
     state = reg;
 
-
-    if ((joinAlloc(buffer, message, net, id, tcp, nodeip, nodetcp)) != 0) state = error;
+    if ((joinAlloc(buffer, message, id, tcp, nodeip, nodetcp)) != 0) state = error;
 
     while (state != done) {
         switch (state) {
             case reg:
-                sscanf(command, "%*s %s %s %s", net, id, tcp);
-                sprintf(message, "%s %s %s %s", REG, net, id, tcp);
-                if (UDPcomms(message, buffer) != 0) state = error;
+                sscanf(command, "%*s %d %d"
+                net_id, id);
+                sprintf(message, "%s %d %s %s", REG, net_id, args->IP, args->TCP);
+                if (UDPcomms(message, buffer, args) != 0) state = error;
                 if (!strcmp(buffer, OKREG)) state = error;
                 else state = list;
                 break;
 
             case list:
-                sprintf(message, "%s %s", NODESLIST, net);
+                sprintf(message, "%s %d", NODESLIST, net_id);
                 if (UDPcomms(message, buffer) != 0) state = error;
-                if (sscanf(buffer, "NODESLIST %*d\n %s %s", nodeip, nodetcp) != 2) state = error;
-                else state = advertise;
+                else state = get_peer;
                 break;
 
             case error:
                 perror("Error during Nodes Server Operations");
-                joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
+                joinFree(buffer, message, net_id, id, tcp, nodeip, nodetcp);
+                net_id = -1;
                 state = done;
                 break;
 
-            case advertise:
-
+            case get_peer:
+                sscanf(buffer, "%*s %*s\n %s %s", netinfo->ext_IP, netinfo->ext_TCP);
                 state = done;
                 break;
-
-            case done:
+            default:
                 break;
-
         }
     }
 
-    joinFree(buffer, message, net, id, tcp, nodeip, nodetcp);
-    return 0;
+    joinFree(buffer, message, id, tcp, nodeip, nodetcp);
+    return net_id;
 }
 
-int joinAlloc(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp) {
+int joinAlloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
 
     if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
     return -1;
-    if ((message = (char *) malloc(sizeof NODESLIST + sizeof net)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((net = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
+    if ((message = (char *) malloc(sizeof NODESLIST + sizeof net_id)) == NULL) perror("MEM ALLOCATION ERROR");
     return -1;
     if ((ip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
     return -1;
@@ -85,11 +79,10 @@ int joinAlloc(char *buffer, char *message, char *net, char *ip, char *tcp, char 
     return 0;
 }
 
-void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char *nodeip, char *nodetcp) {
+void joinFree(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
 
     free(buffer);
     free(message);
-    free(net);
     free(ip);
     free(tcp);
     free(nodeip);
@@ -97,7 +90,7 @@ void joinFree(char *buffer, char *message, char *net, char *ip, char *tcp, char 
 
 }
 
-int UDPcomms(char *message, char *buffer) {
+int UDPcomms(char *message, char *buffer, struct S_args *args) {
 
     struct addrinfo hints, *res;
     int serverfd, errcode;
@@ -118,7 +111,7 @@ int UDPcomms(char *message, char *buffer) {
     hints.ai_socktype = SOCK_DGRAM;
 
 
-    errcode = getaddrinfo(UDPSERVER, UDPPORT, &hints, &res);
+    errcode = getaddrinfo(UDPSERVER, UDPPORT, &hints, &res); //TODO
     if (errcode != 0) {
         perror("Error addrinfo UDP");
         return -1;
@@ -145,7 +138,7 @@ int UDPcomms(char *message, char *buffer) {
         return -1;
     } else if (FD_ISSET(0, &r_fd)) {
 
-        fgets(buffer, BUFFERSIZE, stdin); //TODO Há problema em usar o mesmo buffer para os 2 ?
+        fgets(buffer, BUFFERSIZE, stdin);
         buffer[n] = '\0';
 
     } else if (FD_ISSET(serverfd, &r_fd)) {

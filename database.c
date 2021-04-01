@@ -15,12 +15,6 @@
 #include "UDP.h"
 
 
-struct database {
-    char *name[DBSIZE];//todo
-    bool last_used;
-    //FILE something something
-};
-
 enum dbSwitch {
     Local, Cache
 };

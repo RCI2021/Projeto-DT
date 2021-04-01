@@ -20,5 +20,11 @@
 //Database
 #define DBSIZE 2
 
+struct database {
+    char *name[DBSIZE];//todo
+    bool last_used;
+    //FILE something something
+};
+
 #define MAXNAMESIZE 128
 #endif //PROJETO_DT_MSG_H

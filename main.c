@@ -12,11 +12,10 @@
 #include "client.h"
 #include "UDP.h"
 
-struct S_args {
-    char *IP;
-    char *TCP;
-    char *regIP;
-    char *regUDP;
+enum State {
+
+    join, connected, leave, wait, exit
+
 };
 
 int server_IP = 0, server_port = 59000, id; //TODO Pode-se chamar o programa sem dizer qual o Servidor de nós?
@@ -31,6 +30,8 @@ int main(int argc, char **argv) {
     char *command, *name, *object, *net, *bootIP, *bootTCP;
     int *id;
     short int c;
+    enum State state;
+    struct net_info net_info;
 
     if ((args = (struct S_args *) malloc(sizeof(struct S_args))) == NULL)exit(137); // Allocating mem for Arguments
     if ((args->IP = (char *) malloc(sizeof(argv[1]))) == NULL) exit(137);
@@ -45,42 +46,31 @@ int main(int argc, char **argv) {
     strcpy(args->regUDP, argv[4]);
     argVerification(args, argc);
 
-    while (!strcmp(command, "exit")) {
-
-        switch (commandChoice(command)) {
-
-
-            case 1: //Join command
-                join(command);
+    while (state != exit) {
+        switch (state) {
+            case join:
+                if ((join_net(args, net_info)) == -1) state = error;
+                else state = connected;
                 break;
-            case 2: //create
-                create(command);
+            case connected:
+                if ((net(netinfo)) == -1) state = error;
+                else state = leave;
                 break;
-            case 3: //get
+            case leave:
+                if ((leave_net()) == -1 state = error;
+                        else state = wait;
                 break;
-            case 4: //Show topology
+            case wait:
+                fgets(command, BUFFERSIZE, stdin);//Verification
+                state = commandChoice(command);
                 break;
-            case 5: //Show routing
+            default:
                 break;
-            case 6: //show cache
-                break;
-            case 7: //leave
-                break;
-            case 8: //exit
-                break;
-            case -1:    //unknown command
-                break;
-            default:    //undefined behaviour?
-                break;
-
         }
     }
-
-
     free(args);
     free(command);
     exit(0);
-
 }
 
 int argVerification(struct S_args *args, int argc) {
@@ -119,7 +109,7 @@ int argVerification(struct S_args *args, int argc) {
     }
 }
 
-int commandChoice(char *command) {
+int commandChoice(char *command) { //TODO
 
     if (strcmp(command, "join")) {
         return 1;
