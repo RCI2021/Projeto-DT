@@ -15,7 +15,8 @@
 #define TIMEOUT 300
 //TCP
 #define QUEUELENGHT 5
-
+#define IPSIZE 1//TODO
+#define TCPSIZE 2//TODO
 
 //Database
 #define DBSIZE 2

@@ -9,8 +9,7 @@
 #define UDPPORT "59000"
 
 
-
-struct S_args {
+struct my_info {
     char *IP;
     char *TCP;
     char *regIP;
@@ -18,6 +17,8 @@ struct S_args {
 };
 
 struct net_info {
+    int net;
+    int id;
     char *ext_IP;
     char *ext_TCP;
     char *rec_IP;
