@@ -45,7 +45,7 @@ void add_Item(char *new, enum dbSwitch sw) {
         cache->name[0] = new;
         cache->last_used = false;
 
-    } else if ((cache->name[1] == NULL) || (cache->last_used == 0)) {
+    } else if ((cache->name[1] == NULL) || (cache->last_used == false)) {
 
         cache->name[1] = new;
         cache->last_used = true;

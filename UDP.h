@@ -8,9 +8,7 @@
 #define UDPSERVER "tejo.tecnico.ulisboa.pt"
 #define UDPPORT "59000"
 
-enum State {
-    reg, list, error, get_peer, done
-};
+
 
 struct S_args {
     char *IP;
@@ -27,10 +25,10 @@ struct net_info {
     struct socket_list list;
 };
 
-int joinAlloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
+int join_Alloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
 
-void joinFree(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
+void join_Free(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
 
-int UDPcomms(char *message, char *buffer);
+int UDP_comms(char *message, char *buffer);
 
 #endif //PROJETO_DT_UDP_H

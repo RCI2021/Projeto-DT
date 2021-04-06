@@ -15,6 +15,10 @@
 #include "UDP.h"
 
 
+enum State {
+    reg, list, error, get_peer, done
+};
+
 int join_net(char *command, struct S_args *args, struct net_info *netinfo) {
 
     char *buffer, *message, *id, *tcp, *nodeip, *nodetcp;
@@ -57,11 +61,11 @@ int join_net(char *command, struct S_args *args, struct net_info *netinfo) {
         }
     }
 
-    joinFree(buffer, message, id, tcp, nodeip, nodetcp);
+    join_Free(buffer, message, id, tcp, nodeip, nodetcp);
     return net_id;
 }
 
-int joinAlloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
+int join_Alloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
 
     if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
     return -1;
@@ -79,7 +83,7 @@ int joinAlloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, ch
     return 0;
 }
 
-void joinFree(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
+void join_Free(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
 
     free(buffer);
     free(message);
@@ -90,7 +94,7 @@ void joinFree(char *buffer, char *message, char *ip, char *tcp, char *nodeip, ch
 
 }
 
-int UDPcomms(char *message, char *buffer, struct S_args *args) {
+int UDP_comms(char *message, char *buffer, struct S_args *args) {
 
     struct addrinfo hints, *res;
     int serverfd, errcode;
@@ -147,9 +151,28 @@ int UDPcomms(char *message, char *buffer, struct S_args *args) {
             perror("Error retriving msg from UDP");
         return -1;
         buffer[n] = '\0';
-    }
+    } //TODO retval=0 implica timeout
 
     close(serverfd);
     freeaddrinfo(res);
     return 0;
+}
+
+int leave_net() {
+
+    char *message, *buffer;
+    bool err;
+
+    if ((message = (char *) malloc(sizeof UNREG)) == NULL) return -137;
+    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -137;
+
+    sprintf(message, UNREG);
+    UDPcomms(message, buffer); //TODO have UDP & ServerIp as extern
+    if (!strcmp(buffer, UNREG)) perror("UNREG not received");
+    err = TRUE;
+
+    free(message);
+    free(buffer);
+    return (int) err;
+
 }

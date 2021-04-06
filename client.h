@@ -14,7 +14,7 @@
 #define OKUNREG "OKUNREG"
 #define TIMEOUT 300
 //TCP
-
+#define QUEUELENGHT 5
 
 
 //Database
