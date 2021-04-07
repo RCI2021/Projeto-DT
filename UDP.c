@@ -1,178 +1,138 @@
 //
 // Created by anton on 23/03/2021.
 //
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
 #include "client.h"
 #include "UDP.h"
 
+int join(struct my_info *args, struct net_info *info) {
 
-enum State {
-    reg, list, error, get_peer, done
-};
+    char *message, *buffer;
 
-int join_net(char *command, struct S_args *args, struct net_info *netinfo) {
+    if ((message = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
 
-    char *buffer, *message, *id, *tcp, *nodeip, *nodetcp;
-    int net_id;
-    enum State state;
-    state = reg;
-
-    if ((joinAlloc(buffer, message, id, tcp, nodeip, nodetcp)) != 0) state = error;
-
-    while (state != done) {
-        switch (state) {
-            case reg:
-                sscanf(command, "%*s %d %d"
-                net_id, id);
-                sprintf(message, "%s %d %s %s", REG, net_id, args->IP, args->TCP);
-                if (UDPcomms(message, buffer, args) != 0) state = error;
-                if (!strcmp(buffer, OKREG)) state = error;
-                else state = list;
-                break;
-
-            case list:
-                sprintf(message, "%s %d", NODESLIST, net_id);
-                if (UDPcomms(message, buffer) != 0) state = error;
-                else state = get_peer;
-                break;
-
-            case error:
-                perror("Error during Nodes Server Operations");
-                joinFree(buffer, message, net_id, id, tcp, nodeip, nodetcp);
-                net_id = -1;
-                state = done;
-                break;
-
-            case get_peer:
-                sscanf(buffer, "%*s %*s\n %s %s", netinfo->ext_IP, netinfo->ext_TCP);
-                state = done;
-                break;
-            default:
-                break;
+    if ((info->ext_IP == NULL) && (info->ext_TCP == NULL)) {
+        sprintf(message, "NODES %d", info->net);
+        if ((UDP_exch(message, buffer, args)) != 0) {
+            free(message);
+            free(buffer);
+            return -1;
         }
+        sscanf(buffer, "%*s %*d %s %s", info->ext_IP, info->ext_TCP);
     }
 
-    join_Free(buffer, message, id, tcp, nodeip, nodetcp);
-    return net_id;
-}
+    sprintf(message, "REG %d %s %s", info->net, args->IP, args->TCP);
+    if ((UDP_exch(message, buffer, args)) != 0) {
+        perror("UDP Error");
+        free(message);
+        free(buffer);
+        return -1;
+    }
+    if (!strcmp(buffer, OKREG)) {
+        perror("timeout");
+        free(message);
+        free(buffer);
+        return -1;
+    }
 
-int join_Alloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
-
-    if ((buffer = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((message = (char *) malloc(sizeof NODESLIST + sizeof net_id)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((ip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((tcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((nodeip = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-    if ((nodetcp = (char *) malloc(sizeof BUFFERSIZE + 1)) == NULL) perror("MEM ALLOCATION ERROR");
-    return -1;
-
+    free(message);
+    free(buffer);
     return 0;
 }
 
-void join_Free(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp) {
+int unreg(struct my_info *args, struct net_info *info) {
 
-    free(buffer);
+    char *message, *buffer;
+
+    if ((message = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+
+    sprintf(message, "UNREG %d %s %s", info->net, args->IP, args->TCP);
+    UDP_exch(message, buffer, args);
+    if (!strcmp(buffer, OKUNREG)) {
+        perror("OKUNREG not received");
+        free(message);
+        free(buffer);
+        return -1;
+    }
+
     free(message);
-    free(ip);
-    free(tcp);
-    free(nodeip);
-    free(nodetcp);
+    free(buffer);
+    return 0;
 
 }
 
-int UDP_comms(char *message, char *buffer, struct S_args *args) {
+int UDP_exch(char *message, char *buffer, struct my_info *args) {
 
     struct addrinfo hints, *res;
     int serverfd, errcode;
     struct sockaddr addr;
     socklen_t addrlen;
     ssize_t n;
-    fd_set r_fd;
-    struct timeval tv;
+    fd_set rfds;
     int retval;
 
-    if ((serverfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("Error creating socket for UDP comms");
+    if ((serverfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {   //Create Socket
+        perror("Error creating socket");
         return -1;
     }
 
-    memset(&hints, 0, sizeof hints);
+    memset(&hints, 0, sizeof hints);  //Set hints
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-
-    errcode = getaddrinfo(UDPSERVER, UDPPORT, &hints, &res); //TODO
-    if (errcode != 0) {
+    if ((errcode = getaddrinfo(args->regIP, args->regUDP, &hints, &res)) != 0) {
         perror("Error addrinfo UDP");
+        close(serverfd);
+        freeaddrinfo(res);
         return -1;
     }
 
     if ((n = sendto(serverfd, message, sizeof message, 0, res->ai_addr, res->ai_addrlen)) == -1) {
-
         perror("Error sending message to UDP server");
         close(serverfd);
         freeaddrinfo(res);
         return -1;
     }
 
-    FD_ZERO(&r_fd);
-    FD_SET(0, &r_fd);
-    FD_SET(serverfd, &r_fd);
+    FD_ZERO(&rfds);
+    FD_SET(0, &rfds);
+    FD_SET(serverfd, &rfds);
 
-    tv.tv_sec = TIMEOUT;
-
-    retval = select(serverfd + 1, &r_fd, (fd_set *) NULL, (fd_set *) NULL, &tv);
+    retval = select(serverfd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
 
     if (retval < 1) {
         perror("Select Error");
         return -1;
-    } else if (FD_ISSET(0, &r_fd)) {
+    } else if (FD_ISSET(serverfd, &rfds)) {
+
+        addrlen = sizeof addr;
+        if ((n = recvfrom(serverfd, buffer, BUFFERSIZE, 0, &addr, &addrlen)) == -1) {
+            perror("Error Retriving message from UDP server");
+            close(serverfd);
+            freeaddrinfo(res);
+            return -1;
+        } else buffer[n] = '\0';
+
+    } else if (FD_ISSET(0, &rfds)) {
 
         fgets(buffer, BUFFERSIZE, stdin);
-        buffer[n] = '\0';
-
-    } else if (FD_ISSET(serverfd, &r_fd)) {
-        addrlen = sizeof addr;
-        if ((n = recvfrom(serverfd, buffer, BUFFERSIZE, 0, &addr, &addrlen)) == -1)
-            perror("Error retriving msg from UDP");
-        return -1;
-        buffer[n] = '\0';
-    } //TODO retval=0 implica timeout
+        buffer[strcspn(buffer, "\n")] = '\0';
+    }
 
     close(serverfd);
     freeaddrinfo(res);
     return 0;
-}
-
-int leave_net() {
-
-    char *message, *buffer;
-    bool err;
-
-    if ((message = (char *) malloc(sizeof UNREG)) == NULL) return -137;
-    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -137;
-
-    sprintf(message, UNREG);
-    UDPcomms(message, buffer); //TODO have UDP & ServerIp as extern
-    if (!strcmp(buffer, UNREG)) perror("UNREG not received");
-    err = TRUE;
-
-    free(message);
-    free(buffer);
-    return (int) err;
 
 }

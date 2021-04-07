@@ -23,7 +23,7 @@ struct net_info {
     char *ext_TCP;
     char *rec_IP;
     char *rec_TCP;
-    struct socket_list list;
+    struct socket_list *list;
 };
 
 int join_Alloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
