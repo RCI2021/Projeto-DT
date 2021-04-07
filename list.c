@@ -13,6 +13,25 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+
+int FD_setlist(struct node *head_fd, fd_set *rfds) {
+
+    struct node *aux = head_fd;
+    int max;
+
+    FD_ZERO(&rfds);
+
+    while (aux->next != NULL) {
+
+        FD_SET(aux->fd, &rfds);
+        if (max < aux->fd) max = aux->fd;
+        aux = aux->next;
+
+    }
+
+    return max;
+}
+
 int add_item_list(int fd, struct node *head) {
 
     struct node *aux, *new;
@@ -79,8 +98,8 @@ void free_list(struct node *head) {
 }
 
 
-int get_next_list(struct node *this) {
+int get_next_list(struct node *current) {
 
-    return ((this->next == NULL) ? NULL : this->next->fd);
+    return ((current->next == NULL) ? NULL : current->next->fd);
 
 }
