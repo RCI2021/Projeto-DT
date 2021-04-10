@@ -14,7 +14,7 @@
 #include <string.h>
 
 
-int FD_setlist(struct node *head_fd, fd_set *rfds) {
+int FD_setlist(struct node *head_fd, fd_set *rfds) {    //Todo ideia do tiago de copiar o rfds
 
     struct node *aux = head_fd;
     int max;
@@ -60,13 +60,11 @@ void rm_item_list(int fd, struct node *head) {
 
 }
 
-struct node *create_list(int fd) {
+struct node *create_list() {
 
     struct node *head;
 
     if ((head = (struct node *) malloc(sizeof(struct node))) == NULL) return NULL;
-
-    head->fd = fd;
 
     return head;
 

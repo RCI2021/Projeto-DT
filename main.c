@@ -44,10 +44,14 @@ int main(int argc, char **argv) {
                     perror("Error Joining net");
                     state = wait;
                 }
-                state = connected;
+                state = connected:
                 break;
             case connected:
-                //TODO Call TCP to start connecting to Extern
+                if ((TCP_server(info)) != 0) {
+                    perror("Net error");
+                }
+                state = wait;
+
                 break;
             case quit:
                 break;

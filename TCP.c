@@ -24,35 +24,22 @@ enum State2 {
 
 };
 
-int net_control(struct net_info *netInfo) {
+enum Net_action {
 
-    enum State1 state = join;
+    ext, adv, wit, interest, d, nod, err
 
-    while (state != leave) {
-        switch (state) {
-            case join:
-                TCP_server(netInfo->ext_IP, netInfo->ext_TCP);
-                break;
-            case wait:
-                fgets(buffer, BUFFERSIZE, stdin);
-                state = state_choice(buffer);
-                break;
-            case create:
-                break;
-            case get:
-                break;
-            case st:
-                break;
-            case sr:
-                break;
-            case sc:
-                break;
-            default:
-                break;
+};
 
+enum Keyboard_state {
 
-        }
-    }
+    crt, get, st, sr, sc, lv, kb_error
+
+};
+
+int TCP_client(struct net_info *info) {
+
+    int fd;
+
 }
 
 int TCP_server(char *IP, char *port) {
@@ -105,3 +92,39 @@ int TCP_server(char *IP, char *port) {
         }
     }
 }
+
+enum Net_action net_buffer_handle(char *buffer) {
+
+    if (strcmp(buffer, EXT)) {
+        return ext;
+    } else if (strcmp(buffer, ADV)) {
+        return adv;
+    } else if (strcmp(buffer, WIT)) {
+        return wit;
+    } else if (strcmp(buffer, INTEREST)) {
+        return interest;
+    } else if (strcmp(buffer, D)) {
+        return d;
+    } else if (strcmp(buffer, NOD)) {
+        return nod;
+    } else return err;
+}
+
+enum Keyboard_state net_keyboard_handle(char *buffer) {
+
+    if (strcmp(buffer, CREATE)) {
+        return crt;
+    } else if (strcmp(buffer, GET)) {
+        return get;
+    } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
+        return st;
+    } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
+        return sr;
+    } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
+        return sc;
+    } else if (strcmp(buffer, LV)) {
+        return lv;
+    } else return kb_error;
+
+
+};

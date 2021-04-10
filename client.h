@@ -20,6 +20,21 @@
 
 //Database
 #define DBSIZE 2
+#define CREATE "create"
+#define GET "get"
+#define ST1 "show topology"
+#define SR1 "show routing"
+#define SC1 "show cache"
+#define ST2 "st"
+#define SR2 "sr"
+#define SC2 "sc"
+#define LV "leave"
+#define EXT "EXTERN"
+#define ADV "ADVERTISE"
+#define WIT "WITHDRAW"
+#define INTEREST "INTEREST"
+#define D "DATA"
+#define NOD "NODATA"
 
 struct database {
     char *name[DBSIZE];//todo

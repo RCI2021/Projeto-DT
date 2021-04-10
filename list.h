@@ -22,7 +22,7 @@ int get_next_list(struct node *current);
 
 void free_list(struct node *head);
 
-struct node *create_list(int fd);
+struct node *create_list();
 
 int max_fd_list(struct node *head);
 
