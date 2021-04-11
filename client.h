@@ -7,7 +7,7 @@
 
 #define BUFFERSIZE 1024
 //UDP
-#define NODESLIST "NODESLIST"
+#define NODESLIST "NODES"
 #define REG "REG"
 #define UNREG "UNREG"
 #define OKREG "OKREG"
@@ -37,10 +37,17 @@
 #define NOD "NODATA"
 
 struct database {
-    char *name[DBSIZE];//todo
-    bool last_used;
-    //FILE something something
+    int size;
+    struct f_list list;
+    int cache_last_used;
 };
 
+struct f_list {
+
+    char *name;
+    struct f_list *next;
+
+};
+#define CACHESIZE 2
 #define MAXNAMESIZE 128
 #endif //PROJETO_DT_MSG_H

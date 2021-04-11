@@ -17,10 +17,55 @@
 #include "list.h"
 
 
-int TCP_client(struct net_info *info) {
+int TCP_client(struct net_info *info) { //RETURN FD
 
     int fd;
 
+    struct addrinfo hints, *res;
+    int fd, n;
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) return -1;
+
+    ssize_t nbytes, nleft, nwritten, nread;
+    char *ptr, buffer[128 + 1];
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    n = getaddrinfo(info->ext_IP, info->ext_TCP, &hints, &res);
+    if (n != 0) return -1;
+
+    n = connect(fd, res->ai_addr, res->ai_addrlen);
+    if (n == -1) return -1;
+
+    ptr = strcpy(buffer, "NEW %s\n", info->id);
+    nbytes = (4 + sizeof(info->id));
+
+    nleft = nbytes;
+    while (nleft > 0) {
+        nwritten = write(fd, ptr, nleft);
+        if (nwritten <= 0) return -1;
+        nleft -= nwritten;
+        ptr += nwritten;
+    }
+    nbytes = sizeof EXT + 3;
+    nleft = nbytes;
+    ptr = buffer;
+    while (nleft > 0) {
+        nread = read(fd, ptr, nleft);
+        if (nread == -1) return -1;
+        else if (nread == 0) break;
+        nleft -= nread;
+        ptr += nread;
+    }
+
+    nread = nbytes - nleft;
+
+    buffer[nread] = '\0';
+
+    return fd; //write NEW IP TCP read IP TCP -> recovery
 }
 
 int TCP_server(struct net_info *info) {
@@ -97,7 +142,9 @@ int TCP_server(struct net_info *info) {
 
                         if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
                             if (n == -1) return -1;//TODO ERROR
-                            if (strcmp(buffer, EXT)) {
+                            buffer[n] = '\0';
+
+                            if (strncmp(buffer, EXT, sizeof EXT)) {
                                 //TODOext;
                             } else if (strcmp(buffer, ADV)) {
                                 rcv_advertise()//TODOadv;

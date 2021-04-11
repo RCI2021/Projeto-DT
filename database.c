@@ -7,93 +7,92 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include "UDP.h"
-
 
 enum dbSwitch {
     Local, Cache
 };
 
+static struct database *local, *cache;
+
 int data_Init() {
 
     if ((local = (struct database *) malloc(sizeof(struct database))) == NULL) return -1;
     if ((cache = (struct database *) malloc(sizeof(struct database))) == NULL) return -1;
+
+    return 0;
 }
 
 void add_Item(char *new, enum dbSwitch sw) {
 
-    if (sw == Local) {
-
-        if ((local->name[0] == NULL) || (local->last_used == true)) { //TODO local só tem 2 posições ou se é ilimitado?
-
-            local->name[0] = new;
-            local->last_used = false;
-
-        } else if ((local->name[1] == NULL) || (local->last_used == false)) {
-
-            local->name[1] = new;
-            local->last_used = true;
-        }
-    }
-    if ((cache->name[0] == NULL) || (cache->last_used == true)) {
-
-        cache->name[0] = new;
-        cache->last_used = false;
-
-    } else if ((cache->name[1] == NULL) || (cache->last_used == false)) {
-
-        cache->name[1] = new;
-        cache->last_used = true;
-    }
-    return;
-}
-
-
-/*
-void rm_Item(char *rm, enum dbSwitch sw) {
-
+    struct f_list *aux;
     int i;
 
-    if (sw == Local) {
+    if (sw == Local) aux = local->list;
+    local->size++;
 
+    else aux = cache->list;
+    cache->size++;
+
+    if (sw != Cache || ((cache->size <= CACHESIZE) && (sw == Cache))) {
+        for (; aux->next != NULL; aux = aux->next);
+        aux->next = create_item(new);
 
     } else {
-        for (i=0;i<DBSIZE;i++){
-            if (strcmp(rm,cache->name[i])) free(cache->name[i]);
-        }
+        for (i = 0; i < cache->cache_last_used; i++)aux = aux->next;
+        aux->name = new;
     }
+
     return;
 }
-*/
-int get_name(char *search, int id) {
 
-    int id_aux, res, i;
+void rm_Item(char *name) {
 
-    sscanf(search, "%d.%*s", &id_aux);
+    struct f_list *aux = local->list, *rm;
 
-    if (id_aux == id) { //TODO
+    if (!strcmp(aux->name, name)) {
 
-        for (i = 0; i < DBSIZE; i++) {
-            if (strcmp(local->name[i], search)) res = i;
+        for (; aux->next != NULL; aux = aux->next) {
+
+            if (strcmp(aux->next->name, name)) break;
+
         }
+        rm = aux->next;
+        aux->next = aux->next->next;
+
     } else {
-        if (strcmp(search, cache->name[0])) {
-            res = 0;
-        } else if (strcmp(search, cache->name[1])) {
-            res = 1;
-        } else res = -1;
+        rm = aux;
+        aux = aux->next;
     }
 
-    return res;
+    free(rm->name);
+    free(rm);
+    return;
 
 }
 
-void show_cache() {
-    printf("Cache currently stored:\n1: %s \n2: %s\n", cache->name[0], cache->name[1]);
-    return;
+int get_file(char *name, enum dbSwitch *sw) {
+
+    struct f_list *aux;
+    int i;
+    if (sw == Local) aux = local->list;
+    else aux = cache->list;
+
+    for (i = 0; aux->next != NULL; i++) {
+
+        if (strcmp(name, aux->name))break;
+
+    }//TODO
+
+    return i;
+
+}
+
+struct f_list *create_item(char *name) {
+    struct f_list *new;
+    if ((new = (struct f_list *) malloc(sizeof(struct f_list))) == NULL) return NULL;
+    new->name = name;
+    return new;
+
 }
