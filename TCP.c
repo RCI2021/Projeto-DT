@@ -42,13 +42,11 @@ int TCP_client(struct net_info *info) {
 
 }
 
-int TCP_server(char *IP, char *port) {
-
+int TCP_server(struct net_info *info) {
 
     struct addrinfo hints, *res;
-    int listen_fd, errcode, maxfd, counter;
-    struct node *list_fd, *head_fd;
-    fd_set rfds;
+    int listen_fd, new_fd, connect_fd, errcode, max_fd, count;
+    fd_set rfds_current, rfds;
     ssize_t n_read, n_write;
     struct sockaddr addr;
     socklen_t addrlen;
