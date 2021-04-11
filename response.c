@@ -26,7 +26,7 @@ void extern(struct struct net_info *info, char* buffer)
 
 }
 
-void rcv_advertise(struct net_info *info, char* buffer, struct node *head_fd)
-{
-    //TODO adicionar o id à lista do nó e enviar para os nós seguintes (atenção p/ n repetir o nò!)
+void advertise(struct net_info *info, char *buffer, struct node *head_fd) {
+
+    //TODO adicionar o id à lista do nó e enviar para os nós seguintes (atenção p/ n repetir o nó!)
 }

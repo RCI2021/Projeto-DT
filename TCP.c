@@ -146,15 +146,15 @@ int TCP_server(struct net_info *info) {
 
                             if (strncmp(buffer, EXT, sizeof EXT)) {
                                 //TODOext;
-                            } else if (strcmp(buffer, ADV)) {
-                                rcv_advertise()//TODOadv;
-                            } else if (strcmp(buffer, WIT)) {
+                            } else if (strncmp(buffer, ADV, sizeof ADV)) {
+                                advertise()//TODOadv;
+                            } else if (strncmp(buffer, WIT, sizeof WIT)) {
                                 //TODOwit;
-                            } else if (strcmp(buffer, INTEREST)) {
+                            } else if (strncmp(buffer, INTEREST, sizeof INTEREST)) {
                                 //TODOinterest;
-                            } else if (strcmp(buffer, D)) {
+                            } else if (strncmp(buffer, D, sizeof D)) {
                                 //TODOd;
-                            } else if (strcmp(buffer, NOD)) {
+                            } else if (strncmp(buffer, NOD, sizeof NOD)) {
                                 //TODOnod;
                             } else //TODOerr;
                         }
