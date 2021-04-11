@@ -26,10 +26,11 @@ struct net_info {
     struct socket_list *list;
 };
 
-int join_Alloc(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
 
-void join_Free(char *buffer, char *message, char *ip, char *tcp, char *nodeip, char *nodetcp);
+int join(struct my_info *args, struct net_info *info);
 
-int UDP_comms(char *message, char *buffer);
+int unreg(struct my_info *args, struct net_info *info);
+
+int UDP_exch(char *message, char *buffer, struct my_info *args);
 
 #endif //PROJETO_DT_UDP_H
