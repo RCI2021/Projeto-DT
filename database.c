@@ -21,8 +21,8 @@ enum dbSwitch {
 
 int data_Init() {
 
-    if (local = (struct database *) malloc(sizeof(struct database)) == NULL) return -1;
-    if (cache = (struct database *) malloc(sizeof(struct database)) == NULL) return -1;
+    if ((local = (struct database *) malloc(sizeof(struct database))) == NULL) return -1;
+    if ((cache = (struct database *) malloc(sizeof(struct database))) == NULL) return -1;
 }
 
 void add_Item(char *new, enum dbSwitch sw) {

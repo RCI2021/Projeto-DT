@@ -17,18 +17,6 @@
 #include "list.h"
 
 
-enum Net_action {
-
-    ext, adv, wit, interest, d, nod, err
-
-};
-
-enum Keyboard_state {
-
-    crt, get, st, sr, sc, lv, kb_error
-
-};
-
 int TCP_client(struct net_info *info) {
 
     int fd;
@@ -45,8 +33,6 @@ int TCP_server(struct net_info *info) {
     socklen_t addrlen;
     char *ptr, *buffer;
     struct node *head_fd, *list_fd;
-    enum Keyboard_state keyboard_state;
-    enum Net_action net_state;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
     if ((connect_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
@@ -89,7 +75,20 @@ int TCP_server(struct net_info *info) {
 
                 FD_CLR(0, &rfds);
                 fgets(buffer, BUFFERSIZE, stdin);
-                keyboard_state = net_keyboard_handle(buffer);
+
+                if (strcmp(buffer, CREATE)) {
+                    //TODOcrt;
+                } else if (strcmp(buffer, GET)) {
+                    //TODOget;
+                } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
+                    //TODOst;
+                } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
+                    //TODOsr;
+                } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
+                    //TODOsc;
+                } else if (strcmp(buffer, LV)) {
+                    //TODOlv;
+                } else //TODOkb_error;
 
             } else {
                 for (list_fd = head_fd; list_fd->next != NULL; list_fd = list_fd->next) {
@@ -98,20 +97,21 @@ int TCP_server(struct net_info *info) {
 
                         if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
                             if (n == -1) return -1;//TODO ERROR
-                            net_action = net_buffer_handle(buffer);
-                            switch (net_action) {
-                                case ext:
-                                    send_ext(); //TODO trow enum out
-                                    break;
-                                case adv:
-                                    advert();
-                                    break;
-                                case wit:
-                                    withdraw();
-                                    break;
-                                case interest:
+                            if (strcmp(buffer, EXT)) {
+                                //TODOext;
+                            } else if (strcmp(buffer, ADV)) {
+                                rcv_advertise()//TODOadv;
+                            } else if (strcmp(buffer, WIT)) {
+                                //TODOwit;
+                            } else if (strcmp(buffer, INTEREST)) {
+                                //TODOinterest;
+                            } else if (strcmp(buffer, D)) {
+                                //TODOd;
+                            } else if (strcmp(buffer, NOD)) {
+                                //TODOnod;
+                            } else //TODOerr;
+                        }
 
-                            }
 
                         }
                     }
@@ -120,39 +120,3 @@ int TCP_server(struct net_info *info) {
         }
     }
 }
-
-enum Net_action net_buffer_handle(char *buffer) {
-
-    if (strcmp(buffer, EXT)) {
-        return ext;
-    } else if (strcmp(buffer, ADV)) {
-        return adv;
-    } else if (strcmp(buffer, WIT)) {
-        return wit;
-    } else if (strcmp(buffer, INTEREST)) {
-        return interest;
-    } else if (strcmp(buffer, D)) {
-        return d;
-    } else if (strcmp(buffer, NOD)) {
-        return nod;
-    } else return err;
-}
-
-enum Keyboard_state net_keyboard_handle(char *buffer) {
-
-    if (strcmp(buffer, CREATE)) {
-        return crt;
-    } else if (strcmp(buffer, GET)) {
-        return get;
-    } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
-        return st;
-    } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
-        return sr;
-    } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
-        return sc;
-    } else if (strcmp(buffer, LV)) {
-        return lv;
-    } else return kb_error;
-
-
-};

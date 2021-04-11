@@ -10,8 +10,8 @@ struct socket_list new_socket(int fd) {
     struct Node *new_node;
     bool err;
 
-    if (new_list = (struct socket_list *) malloc(sizeof(struct socket_list)) == NULL) err = true;
-    if (new_node = (struct Node *) malloc(sizeof(struct Node)) == NULL) err = true;
+    if ((new_list = (struct socket_list *) malloc(sizeof(struct socket_list))) == NULL) err = true;
+    if ((new_node = (struct Node *) malloc(sizeof(struct Node))) == NULL) err = true;
 
     new_node->fd = fd;
     new_list->node = new_node;
