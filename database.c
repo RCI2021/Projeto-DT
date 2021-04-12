@@ -83,7 +83,7 @@ int get_file(char *name, enum dbSwitch *sw) {
 
         if (strcmp(name, aux->name))break;
 
-    }//TODO
+    }
 
     return i;
 

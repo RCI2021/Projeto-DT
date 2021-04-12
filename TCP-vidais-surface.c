@@ -15,57 +15,13 @@
 #include "UDP.h"
 #include "TCP.h"
 #include "list.h"
+#include "database.h"
 
 
-int TCP_client(struct net_info *info) { //RETURN FD
+int TCP_client(struct net_info *info) {
 
     int fd;
 
-    struct addrinfo hints, *res;
-    int fd, n;
-
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) return -1;
-
-    ssize_t nbytes, nleft, nwritten, nread;
-    char *ptr, buffer[128 + 1];
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    n = getaddrinfo(info->ext_IP, info->ext_TCP, &hints, &res);
-    if (n != 0) return -1;
-
-    n = connect(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1) return -1;
-
-    ptr = strcpy(buffer, "NEW %s\n", info->id);
-    nbytes = (4 + sizeof(info->id));
-
-    nleft = nbytes;
-    while (nleft > 0) {
-        nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) return -1;
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    nbytes = sizeof EXT + 3;
-    nleft = nbytes;
-    ptr = buffer;
-    while (nleft > 0) {
-        nread = read(fd, ptr, nleft);
-        if (nread == -1) return -1;
-        else if (nread == 0) break;
-        nleft -= nread;
-        ptr += nread;
-    }
-
-    nread = nbytes - nleft;
-
-    buffer[nread] = '\0';
-
-    return fd; //write NEW IP TCP read IP TCP -> recovery
 }
 
 int TCP_server(struct net_info *info) {
@@ -78,6 +34,8 @@ int TCP_server(struct net_info *info) {
     socklen_t addrlen;
     char *ptr, *buffer;
     struct node *head_fd, *list_fd;
+    struct database *local, *cache;
+
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
     if ((connect_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
@@ -95,6 +53,7 @@ int TCP_server(struct net_info *info) {
     head_fd = create_list();
     list_fd = head_fd;
     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if (data_Init(local, cache) != 0) return -1;
 
     max_fd = FD_setlist(head_fd, &rfds);
     FD_SET(0, &rfds);
@@ -132,7 +91,7 @@ int TCP_server(struct net_info *info) {
                 } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
                     //TODOsc;
                 } else if (strcmp(buffer, LV)) {
-                    //TODOlv;
+                    //TODOlv; Errcode = 1?
                 } else //TODOkb_error;
 
             } else {
@@ -142,22 +101,22 @@ int TCP_server(struct net_info *info) {
 
                         if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
                             if (n == -1) return -1;//TODO ERROR
-                            buffer[n] = '\0';
-
-                            if (strncmp(buffer, EXT, sizeof EXT)) {
+                            if (strcmp(buffer, EXT)) {
                                 //TODOext;
-                            } else if (strncmp(buffer, ADV, sizeof ADV)) {
-                                advertise()//TODOadv;
-                            } else if (strncmp(buffer, WIT, sizeof WIT)) {
+                            } else if (strcmp(buffer, ADV)) {
+                                rcv_advertise()//TODOadv;
+                            } else if (strcmp(buffer, WIT)) {
                                 //TODOwit;
-                            } else if (strncmp(buffer, INTEREST, sizeof INTEREST)) {
+                            } else if (strcmp(buffer, INTEREST)) {
                                 //TODOinterest;
-                            } else if (strncmp(buffer, D, sizeof D)) {
+                            } else if (strcmp(buffer, D)) {
                                 //TODOd;
-                            } else if (strncmp(buffer, NOD, sizeof NOD)) {
+                            } else if (strcmp(buffer, NOD)) {
                                 //TODOnod;
                             } else //TODOerr;
                         }
+
+
                     }
                 }
             }
