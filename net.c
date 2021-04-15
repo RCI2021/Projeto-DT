@@ -12,8 +12,8 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include "client.h"
-#include "UDP.h"
-#include "TCP.h"
+#include "registration.h"
+#include "net.h"
 #include "list.h"
 
 

@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "client.h"
-#include "UDP.h"
+#include "registration.h"
 
 int join(struct my_info *args, struct net_info *info) {
 

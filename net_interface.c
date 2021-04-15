@@ -2,13 +2,13 @@
 // Created by Duds on 11/04/2021.
 //
 
-#include "response.h"
+#include "net_interface.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "client.h"
-#include "UDP.h"
+#include "registration.h" //todo
 #include "database.h"
 
 //TODO change database to this file
