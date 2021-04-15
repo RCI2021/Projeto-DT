@@ -21,6 +21,7 @@ struct socket_list new_socket(int fd) {
     else return new_list;
 }
 
+//Function adds node to the expedition "table"
 enum bool add_node(struct socket_list *list, int fd) {
 
     struct Node *aux, *new;
@@ -28,7 +29,7 @@ enum bool add_node(struct socket_list *list, int fd) {
 
     if ((new = (struct Node *) malloc(sizeof(struct Node))) == NULL) err = true;
 
-    new->fd = fd;
+    new->id = id;
     aux = list->node;
     while (aux->next != NULL) aux = aux->next;
 
@@ -40,5 +41,27 @@ enum bool add_node(struct socket_list *list, int fd) {
 
 enum bool rm_node(struct socket_list *list, int fd) {
 
+
+}
+
+int add_node(struct struct socket_list *head, int id, int fd){
+
+    struct Node *aux, *new;
+    aux = head;
+
+    while (aux->next != NULL){
+        if(aux->fd == fd){
+            if ((new = (struct Node *) malloc(sizeof(struct Node))) == NULL) return -1;
+
+            while (aux->node->next != NULL) aux->node = aux->node->next;
+            //TODO add node!
+
+        }
+        aux = aux->next;
+    }
+
+    new->id = id;       //associates the node in the list
+
+    //searc
 
 }

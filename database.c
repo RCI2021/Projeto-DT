@@ -27,49 +27,13 @@ int data_Init(struct database *local, struct database *cache) {
     return 0;
 }
 
-void add_Item(char *new, enum dbSwitch sw) {
+void add_Item(char *new, struct database *db) {
 
-    if (sw == Local) {
-
-        if ((local->name[0] == NULL) || (local->last_used == true)) { //TODO local só tem 2 posições ou se é ilimitado?
-
-            local->name[0] = new;
-            local->last_used = false;
-
-        } else if ((local->name[1] == NULL) || (local->last_used == false)) {
-
-            local->name[1] = new;
-            local->last_used = true;
-        }
-    }
-    if ((cache->name[0] == NULL) || (cache->last_used == true)) {
-
-        cache->name[0] = new;
-        cache->last_used = false;
-
-    } else if ((cache->name[1] == NULL) || (cache->last_used == false)) {
-
-        cache->name[1] = new;
-        cache->last_used = true;
-    }
-    return;
-}
+struct database *aux;
+    for (aux=db;aux->next==NULL;aux=aux->next);
 
 
-/*
-void rm_Item(char *rm, enum dbSwitch sw) {
 
-    int i;
-
-    if (sw == Local) {
-
-
-    } else {
-        for (i=0;i<DBSIZE;i++){
-            if (strcmp(rm,cache->name[i])) free(cache->name[i]);
-        }
-    }
-    return;
 }
 */
 int get_name(char *search, int id) {

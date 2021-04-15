@@ -65,6 +65,8 @@ int TCP_client(struct net_info *info) { //RETURN FD
 
     buffer[nread] = '\0';
 
+    //TODO verify EXT and register id!
+
     return fd; //write NEW IP TCP read IP TCP -> recovery
 }
 
@@ -77,7 +79,7 @@ int TCP_server(struct net_info *info) {
     struct sockaddr addr;
     socklen_t addrlen;
     char *ptr, *buffer;
-    struct node *head_fd, *list_fd;
+    struct socket_list *head_fd, *list_fd;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
     if ((connect_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;

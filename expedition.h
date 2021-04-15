@@ -6,13 +6,13 @@
 #define PROJETO_DT_EXPEDITION_H
 
 struct socket_list {
-    int count;
-    Node *node;
-    socket_list *next;
+    int fd;         //file descriptor of socket
+    Node *node;        //list of nodes associated with socket
+    socket_list *next;      //pointer to next socket
 };
 
 struct Node {
-    int fd;
+    int id;
     Node *next;
 };
 

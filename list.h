@@ -6,24 +6,25 @@
 #define PROJETO_DT_LIST_H
 
 
-struct node {
+struct socket_list {
     int fd;
-    struct node *next
+    //todo lista de nós
+    struct socket_list *next
 };
 
 
-int FD_setlist(struct node *head_fd, fd_set *rfds);
+int FD_setlist(struct socket_list *head_fd, fd_set *rfds);
 
-int add_item_list(int fd, struct node *head);
+int add_item_list(int fd, struct socket_list *head);
 
-int add_item_list(int fd, struct node *head);
+int add_item_list(int fd, struct socket_list *head);
 
-int get_next_list(struct node *current);
+int get_next_list(struct socket_list *current);
 
-void free_list(struct node *head);
+void free_list(struct socket_list *head);
 
-struct node *create_list();
+struct socket_list *create_list();
 
-int max_fd_list(struct node *head);
+int max_fd_list(struct socket_list *head);
 
 #endif //PROJETO_DT_LIST_H
