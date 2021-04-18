@@ -1,58 +1,37 @@
-//
-// Created by António and Duarte on 23/03/2021.
-//
 
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "client.h" //Definitions
-#include "registration.h" //Join & leave
-#include "user_interface.h" //User commands
-#include "net.h" // Connection to the network
+#include "user_interface.h"
+
 
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info, char *command); //Memory Allocation
 void info_free(struct my_info *args, struct net_info *info, char *command); //Memory "Deallocation"
 
+
+
 int main(int argc, char **argv) {
 
-    struct my_info *args = NULL;
-    struct net_info *info = NULL;
-    char *command = NULL;
-    enum state_main state = wait;
+    struct my_info *args = NULL;    //Info about myself
+    struct net_info *info = NULL;   //Info about the net I´m in
+    char *command;  //Command Buffer
+    enum state_main state = wait;   //State switch
 
-    //Argument Handles
-    info_alloc(args, info, command);
-    arg_verify(args, argc, argv);
+    if (info_alloc(args, info, command) != 0) return -1; //Memory allocation
+    if (arg_verify(args, argc, argv) != 0) return -1;   //Argument Verification
 
-    while (state != quit) {
+    do {
         switch (state) {
-
             case wait:
-                fgets(command, BUFFERSIZE, stdin);
+                fgets(command, CMDSIZE, stdin);
                 state = command_handle(command, info);
                 break;
-            case join_UDP:
-                if ((join(args, info)) != 0) {
-                    perror("Error Joining net");
-                    state = wait;
-                }
-                state = connected:
-                break;
-            case connected:
-                if ((TCP_server(info)) != 0) {
-                    perror("Net error");
-                }
-                state = wait;
-
-                break;
-            case quit:
-                break;
+            case join:
 
         }
-    }
-    return 0;
+
+    } while (state != quit)
 
 }
 
@@ -70,12 +49,14 @@ int info_alloc(struct my_info *args, struct net_info *info, char *command) {
     if ((args->TCP = (char *) malloc(TCPSIZE)) == NULL) return 1;
     if ((args->regIP = (char *) malloc(IPSIZE)) == NULL) return 1;
     if ((args->regUDP = (char *) malloc(TCPSIZE)) == NULL) return 1;
-    if ((info = (struct net_info *) malloc(sizeof(struct net_info))) == NULL)return 1;
+
+/* TODO    if ((info = (struct net_info *) malloc(sizeof(struct net_info))) == NULL)return 1;
     if ((info->ext_TCP = (char *) malloc(TCPSIZE)) == NULL)return 1;
     if ((info->ext_IP = (char *) malloc(IPSIZE)) == NULL)return 1;
     if ((info->rec_TCP = (char *) malloc(TCPSIZE)) == NULL)return 1;
-    if ((info->rec_IP = (char *) malloc(IPSIZE)) == NULL)return 1;
-    if ((command = (char *) malloc(BUFFERSIZE)) == NULL) return 1;
+    if ((info->rec_IP = (char *) malloc(IPSIZE)) == NULL)return 1; */
+
+    if ((command = (char *) malloc(CMDSIZE)) == NULL) return 1;
 
     return 0;
 }
@@ -93,10 +74,11 @@ void info_free(struct my_info *args, struct net_info *info, char *command) {
     free(args->TCP);
     free(args->regUDP);
     free(args);
-    free(info->rec_TCP);
+
+    /* TODO free(info->rec_TCP);
     free(info->rec_IP);
     free(info->ext_IP);
-    free(info->ext_TCP);
+    free(info->ext_TCP);*/
     free(command);
 
     return;

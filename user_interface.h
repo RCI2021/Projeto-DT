@@ -1,17 +1,19 @@
 //
-// Created by anton on 15/04/2021.
+// Created by anton on 18/04/2021.
 //
 
 #ifndef PROJETO_DT_USER_INTERFACE_H
 #define PROJETO_DT_USER_INTERFACE_H
 
+#define CMDSIZE 128
+
 enum state_main {
 
-    wait, join_UDP, connected, quit
+    wait, join, connected, quit
 
 };
 
-//Required by main.c
-enum state_main command_handle(char *command, struct net_info *info);    //Handle commands given by the user
 int arg_verify(struct my_info *args, int argc, char **argv); //Argument Verification
+enum state_main command_handle(char *command, struct net_info *info); //Command Switcher
+
 #endif //PROJETO_DT_USER_INTERFACE_H
