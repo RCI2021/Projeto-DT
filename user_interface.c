@@ -26,7 +26,7 @@ enum state_main command_handle(char *command, struct net_info *info) {
     } else if (strcmp(aux, "exit")) {   //Case exit
         return quit;
     } else {    //Other commands only work when connected to 1 net
-        printf("Unknown Command, Availabe commands are:\n\t\t\t join \n\t\t\t exit");
+        printf("Unknown Command, Available commands are:\n\t\t\t join \n\t\t\t exit");
         return wait;
     }
 }
