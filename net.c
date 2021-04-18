@@ -73,12 +73,12 @@ int TCP_client(struct net_info *info) { //RETURN FD
 int TCP_server(struct net_info *info) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, connect_fd, errcode, max_fd, count;
+    int listen_fd, new_fd, connect_fd, errcode, max_fd, count, buffer_id;
     fd_set rfds_current, rfds;
     ssize_t n_read, n_write;
     struct sockaddr addr;
     socklen_t addrlen;
-    char *ptr, *buffer;
+    char *ptr, *buffer, *buffer_name;
     struct socket_list *head_fd, *list_fd;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
@@ -97,6 +97,7 @@ int TCP_server(struct net_info *info) {
     head_fd = create_list();
     list_fd = head_fd;
     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
 
     max_fd = FD_setlist(head_fd, &rfds);
     FD_SET(0, &rfds);
@@ -124,47 +125,82 @@ int TCP_server(struct net_info *info) {
                 fgets(buffer, BUFFERSIZE, stdin);
 
                 if (strcmp(buffer, CREATE)) {
-                    //TODOcrt;
+
+                    sscanf(buffer, "%*s %s", buffer); //TODO podemos usar o destino e a origem no mesmo ?
+                    add_Item(buffer, local); //Adicionar o item à base de dados local
+
                 } else if (strcmp(buffer, GET)) {
-                    //TODOget;
-                } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
-                    //TODOst;
-                } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
-                    //TODOsr;
-                } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
-                    //TODOsc;
-                } else if (strcmp(buffer, LV)) {
-                    //TODOlv;
-                } else //TODOkb_error;
 
-            } else {
-                for (list_fd = head_fd; list_fd->next != NULL; list_fd = list_fd->next) {
+                    sscanf(buffer, "%*s %s", buffer_name);
+                    sscanf(buffer_name, "%d", buffer_id);
 
-                    if (FD_ISSET(list_fd->fd, &rfds_current)) {
+                    if (buffer_id == info->id)
+                        if (search_Item(buffer_name, local) < 0) {
 
-                        if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
-                            if (n == -1) return -1;//TODO ERROR
-                            buffer[n] = '\0';
+                            sprintf(buffer, "%s %s\n", NOD, buffer_name);
+                            write(/*todo*/, buffer, sizeof buffer);
 
-                            if (strncmp(buffer, EXT, sizeof EXT)) {
-                                //TODOext;
-                            } else if (strncmp(buffer, ADV, sizeof ADV)) {
-                                advertise()//TODOadv;
-                            } else if (strncmp(buffer, WIT, sizeof WIT)) {
-                                //TODOwit;
-                            } else if (strncmp(buffer, INTEREST, sizeof INTEREST)) {
-                                //TODOinterest;
-                            } else if (strncmp(buffer, D, sizeof D)) {
-                                //TODOd;
-                            } else if (strncmp(buffer, NOD, sizeof NOD)) {
-                                //TODOnod;
-                            } else //TODOerr;
+                            else {
+
+                                sprintf(buffer, "%s %s\n", D, buffer_name);
+                                write(/*todo*/, buffer, sizeof buffer);
+
+                            }else if (search_Item(buffer_name, cache) < 0) {
+
+                                //TODO get fd of next knot to send
+                                sprintf(buffer, "%s %s\n", INTEREST, buffer_name);
+                                write(/*todo*/, buffer, sizeof buffer);
+
+                            } else {
+
+                                sprintf(buffer, "%s %s\n", D, buffer_name);
+                                write(/*TODO*/, buffer, sizeof buffer);
+                            }
+
+
+                        } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
+
+                            printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
+                                   info->rec_TCP);
+
+                        } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
+                            print_Tree(/*TODO*/);
+                        } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
+
+                            printf("Cache currently stored:\n1: %s \n2: %s\n", cache->name[0], cache->name[1]);
+
+                        } else if (strcmp(buffer, LV)) {
+                            //TODOlv;
+                        } else //TODOkb_error;
+
+                } else {
+                    for (list_fd = head_fd; list_fd->next != NULL; list_fd = list_fd->next) {
+
+                        if (FD_ISSET(list_fd->fd, &rfds_current)) {
+
+                            if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
+                                if (n == -1) return -1;//TODO ERROR
+                                buffer[n] = '\0';
+
+                                if (strncmp(buffer, EXT, sizeof EXT)) {
+                                    //TODOext;
+                                } else if (strncmp(buffer, ADV, sizeof ADV)) {
+                                    advertise()//TODOadv;
+                                } else if (strncmp(buffer, WIT, sizeof WIT)) {
+                                    //TODOwit;
+                                } else if (strncmp(buffer, INTEREST, sizeof INTEREST)) {
+                                    //TODOinterest;
+                                } else if (strncmp(buffer, D, sizeof D)) {
+                                    //TODOd;
+                                } else if (strncmp(buffer, NOD, sizeof NOD)) {
+                                    //TODOnod;
+                                } else //TODOerr;
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 
 }
