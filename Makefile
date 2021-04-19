@@ -6,6 +6,7 @@
  CFLAGS = -g -Wall -std=c11
 
  OBJECTS = main.o user_interface.o registration.o
+all: ndn
 
  ndn: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
@@ -18,4 +19,3 @@
 
  clean:
 	rm -f *.o ndn temp
-	make

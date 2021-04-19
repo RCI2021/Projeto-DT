@@ -24,8 +24,8 @@ int reg(struct my_info *args, struct net_info *info) {
 
     char *message, *buffer;
 
-    if ((message = (char *) malloc(BUFFERSIZE)) == NULL) return -1; //Memory Allocation
-    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((message = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1; //Memory Allocation
+    if ((buffer = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1;
 
     if ((info->ext_IP == NULL) && (info->ext_TCP == NULL)) { //Getting Extern, if one wasn´t provided by the yser
         sprintf(message, "NODES %d", info->net);    //Get nodes list from Server
@@ -44,13 +44,13 @@ int reg(struct my_info *args, struct net_info *info) {
         free(buffer);
         return -1;
     }
-    if (!strcmp(buffer, "OKREG")) { //Check if OKREG was received
+    if (strcmp(buffer, "OKREG") != 0) { //Check if OKREG was received
         perror("timeout");
         free(message);
         free(buffer);
         return -1;
     }
-
+    fputs(buffer, stdin);
     free(message);
     free(buffer);
     return 0;
@@ -89,7 +89,7 @@ int UDP_exch(char *message, char *buffer, struct my_info *args) {
         return -1;
     }
 
-    if ((n = sendto(serverfd, message, sizeof message, 0, res->ai_addr, res->ai_addrlen)) == -1) { //Send message
+    if ((n = sendto(serverfd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen)) == -1) { //Send message
         perror("Error sending message to UDP server");
         close(serverfd);
         freeaddrinfo(res);
