@@ -3,35 +3,46 @@
 #include <stdlib.h>
 #include <string.h>
 #include "user_interface.h"
+#include "registration.h"
 
 
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info, char *command); //Memory Allocation
 void info_free(struct my_info *args, struct net_info *info, char *command); //Memory "Deallocation"
 
-
-
 int main(int argc, char **argv) {
 
-    struct my_info *args = NULL;    //Info about myself
-    struct net_info *info = NULL;   //Info about the net I´m in
-    char *command;  //Command Buffer
+    struct my_info args;    //Info about myself
+    struct net_info info;   //Info about the net I´m in
+    char *command = NULL;  //Command Buffer
     enum state_main state = wait;   //State switch
 
-    if (info_alloc(args, info, command) != 0) return -1; //Memory allocation
-    if (arg_verify(args, argc, argv) != 0) return -1;   //Argument Verification
+    printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
+
+    if (info_alloc(&args, &info, command) != 0) return -1; //Memory allocation
+    if (arg_verify(&args, argc, argv) != 0) return -1;   //Argument Verification
 
     do {
         switch (state) {
             case wait:
                 fgets(command, CMDSIZE, stdin);
-                state = command_handle(command, info);
+                state = command_handle(command, &info);
                 break;
             case join:
-
+                if (reg(&args, &info) != 0) {
+                    info_free(&args, &info, command);
+                    return -1;
+                } else state = connected;
+                break;
+            case connected:
+                break;
+            case quit:
+                break;
         }
 
-    } while (state != quit)
+    } while (state != quit);
+
+    return 0;
 
 }
 
@@ -44,17 +55,15 @@ int main(int argc, char **argv) {
  **********************************************************************************************************************/
 int info_alloc(struct my_info *args, struct net_info *info, char *command) {
 
-    if ((args = (struct my_info *) malloc(sizeof(struct my_info))) == NULL) return 1;
-    if ((args->IP = (char *) malloc(IPSIZE)) == NULL) return 1;
-    if ((args->TCP = (char *) malloc(TCPSIZE)) == NULL) return 1;
-    if ((args->regIP = (char *) malloc(IPSIZE)) == NULL) return 1;
-    if ((args->regUDP = (char *) malloc(TCPSIZE)) == NULL) return 1;
+    if ((args->IP = (char *) malloc(IPSIZE * sizeof(char))) == NULL) return 1;
+    if ((args->TCP = (char *) malloc(TCPSIZE * sizeof(char))) == NULL) return 1;
+    if ((args->regIP = (char *) malloc(IPSIZE * sizeof(char))) == NULL) return 1;
+    if ((args->regUDP = (char *) malloc(TCPSIZE * sizeof(char))) == NULL) return 1;
 
-/* TODO    if ((info = (struct net_info *) malloc(sizeof(struct net_info))) == NULL)return 1;
     if ((info->ext_TCP = (char *) malloc(TCPSIZE)) == NULL)return 1;
     if ((info->ext_IP = (char *) malloc(IPSIZE)) == NULL)return 1;
     if ((info->rec_TCP = (char *) malloc(TCPSIZE)) == NULL)return 1;
-    if ((info->rec_IP = (char *) malloc(IPSIZE)) == NULL)return 1; */
+    if ((info->rec_IP = (char *) malloc(IPSIZE)) == NULL)return 1;
 
     if ((command = (char *) malloc(CMDSIZE)) == NULL) return 1;
 

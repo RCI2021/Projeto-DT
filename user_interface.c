@@ -22,6 +22,7 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
         printf("Not enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
         return -1;
     }
+
 //TODO servidor por omissão
     strcpy(args->IP, argv[1]);
     strcpy(args->TCP, argv[2]);
@@ -71,7 +72,7 @@ enum state_main command_handle(char *command, struct net_info *info) {
 
     //Compare command with available options
     if (strcmp(aux, "join")) { //Case join
-        return join_UDP;
+        return join;
     } else if (strcmp(aux, "exit")) {   //Case exit
         return quit;
     } else {    //Other commands only work when connected to 0 net

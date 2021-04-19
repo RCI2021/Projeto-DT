@@ -1,7 +1,17 @@
 //
 // Created by anton on 18/04/2021.
 //
+#define _POSIX_C_SOURCE 200112L
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/time.h>
+#include <arpa/inet.h>
 #include "registration.h"
 
 /***********************************************************************************************************************
@@ -27,14 +37,14 @@ int reg(struct my_info *args, struct net_info *info) {
         sscanf(buffer, "%*s %*d %s %s", info->ext_IP, info->ext_TCP);   //Get neighbour from buffer
     }
 
-    sprintf(message, "REG %d %s %s", info->net, args->IP, args->TCP);
-    if ((UDP_exch(message, buffer, args)) != 0) {
-        perror("UDP Error");
+    sprintf(message, "REG %d %s %s", info->net, args->IP, args->TCP); //Construct REG message
+    if ((UDP_exch(message, buffer, args)) != 0) { //Send Reg message
+        perror("UDP Error");    //Check for errors within sending the message
         free(message);
         free(buffer);
         return -1;
     }
-    if (!strcmp(buffer, OKREG)) {
+    if (!strcmp(buffer, "OKREG")) { //Check if OKREG was received
         perror("timeout");
         free(message);
         free(buffer);
@@ -56,7 +66,7 @@ int reg(struct my_info *args, struct net_info *info) {
 int UDP_exch(char *message, char *buffer, struct my_info *args) {
 
     struct addrinfo hints, *res;
-    int serverfd, errcode;
+    int serverfd;
     struct sockaddr addr;
     socklen_t addrlen;
     ssize_t n;
@@ -72,7 +82,7 @@ int UDP_exch(char *message, char *buffer, struct my_info *args) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if ((errcode = getaddrinfo(args->regIP, args->regUDP, &hints, &res)) != 0) {    //Get server address info
+    if ((getaddrinfo(args->regIP, args->regUDP, &hints, &res)) != 0) {    //Get server address info
         perror("Error addrinfo UDP");
         close(serverfd);
         freeaddrinfo(res);
