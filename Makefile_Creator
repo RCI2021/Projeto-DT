@@ -1,7 +1,7 @@
 #!/bin/bash
 #int-or-string.sh
-argv=("$@");
-argc=$#;
+argv=("$@")
+argc=$#
 
 printf "\n\tWelcome to the Makefile Creator by Tony\n_____________________________________________________________\n\n"
 
@@ -19,7 +19,7 @@ if [ -z "$2" ]; then
 else
   printf "#Created with Makefile Creator\n\nCC=gcc\nCFLAGS= " >>Makefile
 
-  for((i=1;i<argc;i++)); do
+  for ((i = 1; i < argc; i++)); do
     printf "%s " "${argv[i]}" >>Makefile
   done
   printf "\n" >>Makefile
