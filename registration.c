@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include "registration.h"
 
+
 /***********************************************************************************************************************
  * Function to Register a node in the UDP server, and get a neighbour to connect
  * @param args Struct containing info about the node being registered

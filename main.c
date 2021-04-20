@@ -4,7 +4,8 @@
 #include <string.h>
 #include "user_interface.h"
 #include "registration.h"
-
+#include "definition.h"
+#include "net.h"
 
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info); //Memory Allocation
@@ -31,27 +32,24 @@ int main(int argc, char **argv) {
                 break;
 
             case get_nodeslist:
-                if (nodeslist(&args, &info) != 0) {
-                    info_free(&args, &info);
-                    return -1;
-                } else state = join;
+                if (nodeslist(&args, &info) != 0) state = err;
+                else state = join;
                 break;
 
             case join:
-                if (reg(&args, &info) != 0) {
-                    info_free(&args, &info);
-                    return -1;
-                }
+                if (TCP_client(&info) <= 1) state = err;
+                if (reg(&args, &info) != 0) state = err;
                 state = connected;
                 break;
 
             case connected:
                 printf("CONNECTED");
-                if (unreg(&args, &info) != 0) {
-                    info_free(&args, &info);
-                    return -1;
-                }
-                state = wait;
+                if (unreg(&args, &info) != 0) state = err;
+                else state = wait;
+                break;
+            case err:
+                info_free(&args, &info);
+                return -1;
                 break;
 
             default:
@@ -59,6 +57,7 @@ int main(int argc, char **argv) {
                 break;
         }
     }
+
     info_free(&args, &info);
     return 0;
 
