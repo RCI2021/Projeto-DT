@@ -11,7 +11,7 @@
 
 enum state_main {
 
-    wait, join, connected, quit
+    wait, get_nodeslist, join, connected, quit
 
 };
 

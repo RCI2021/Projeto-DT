@@ -3,7 +3,7 @@
 
  CC=gcc
 
- CFLAGS = -g -Wall -std=c11
+ CFLAGS = -g -Wall
 
  OBJECTS = main.o user_interface.o registration.o
 all: ndn

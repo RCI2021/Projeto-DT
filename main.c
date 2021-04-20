@@ -22,28 +22,43 @@ int main(int argc, char **argv) {
     if (info_alloc(&args, &info) != 0) return -1; //Memory allocation
     if (arg_verify(&args, argc, argv) != 0) return -1;   //Argument Verification
 
-    do {
+    while (state != quit) {
         switch (state) {
             case wait:
                 printf("\nInput Command:");
                 fgets(command, CMDSIZE, stdin);
                 state = command_handle(command, &info);
                 break;
+
+            case get_nodeslist:
+                if (nodeslist(&args, &info) != 0) {
+                    info_free(&args, &info);
+                    return -1;
+                } else state = join;
+                break;
+
             case join:
                 if (reg(&args, &info) != 0) {
                     info_free(&args, &info);
                     return -1;
-                } else state = connected;
+                }
+                state = connected;
                 break;
+
             case connected:
-                state = quit;
                 printf("CONNECTED");
+                if (unreg(&args, &info) != 0) {
+                    info_free(&args, &info);
+                    return -1;
+                }
+                state = wait;
                 break;
-            case quit:
+
+            default:
+                state = wait;
                 break;
         }
-
-    } while (state != quit);
+    }
     info_free(&args, &info);
     return 0;
 

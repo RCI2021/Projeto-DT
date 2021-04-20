@@ -29,6 +29,10 @@ struct net_info {
 };
 
 int reg(struct my_info *args, struct net_info *info); //Register Node on UDP server
+int nodeslist(struct my_info *args, struct net_info *info);
+
+int unreg(struct my_info *args, struct net_info *info);
+
 int UDP_exch(char *message, char *buffer, struct my_info *args); //Send UDP message and retrieve response
 
 #endif //PROJETO_DT_REGISTRATION_H

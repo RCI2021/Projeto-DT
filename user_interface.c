@@ -63,10 +63,19 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
 enum state_main command_handle(char *command, struct net_info *info) {
 
     char aux[6];
+    short int n;
 
-    sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP);
-    //Compare command with available options
-    if (strcmp(aux, "join") == 0) { //Case join
+    if ((n = sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP)) == 3) {
+        strcpy(info->ext_IP, "X");
+        strcpy(info->ext_TCP, "X");
+        return get_nodeslist;
+
+    } else if (n != 5) {
+
+        printf("Wrong number of arguments");
+        return wait;
+
+    } else if (strcmp(aux, "join") == 0) { //Case join TODO command leave
         return join;
     } else if (strcmp(aux, "exit") == 0) {   //Case exit
         return quit;
