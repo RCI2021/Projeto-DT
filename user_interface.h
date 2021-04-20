@@ -7,11 +7,11 @@
 
 #define CMDSIZE 128
 
-#include "registration.h"
+#include "definition.h"
 
 enum state_main {
 
-    wait, join, connected, quit
+    wait, get_nodeslist, join, connected, err, quit
 
 };
 

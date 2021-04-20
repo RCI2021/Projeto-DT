@@ -1,7 +1,6 @@
 //
 // Created by anton on 18/04/2021.
 //
-#define _POSIX_C_SOURCE 200112L
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +13,7 @@
 #include <arpa/inet.h>
 #include "registration.h"
 
+
 /***********************************************************************************************************************
  * Function to Register a node in the UDP server, and get a neighbour to connect
  * @param args Struct containing info about the node being registered
@@ -24,10 +24,38 @@ int reg(struct my_info *args, struct net_info *info) {
 
     char *message, *buffer;
 
-    if ((message = (char *) malloc(BUFFERSIZE)) == NULL) return -1; //Memory Allocation
-    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((message = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1; //Memory Allocation
+    if ((buffer = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1;
 
-    if ((info->ext_IP == NULL) && (info->ext_TCP == NULL)) { //Getting Extern, if one wasn´t provided by the yser
+    sprintf(message, "REG %d %s %s", info->net, args->IP, args->TCP); //Construct REG message
+    if ((UDP_exch(message, buffer, args)) != 0) { //Send Reg message
+        perror("UDP Error");    //Check for errors within sending the message
+        free(message);
+        free(buffer);
+        return -1;
+    }
+    if (strcmp(buffer, "OKREG") != 0) { //Check if OKREG was received
+        perror("timeout");
+        free(message);
+        free(buffer);
+        return -1;
+    }
+    fputs(buffer, stdin);
+    free(message);
+    free(buffer);
+    return 0;
+}
+
+int nodeslist(struct my_info *args, struct net_info *info) {
+
+
+    char *message, *buffer;
+
+    if ((message = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1; //Memory Allocation
+    if ((buffer = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1;
+
+    if ((strcmp(info->ext_IP, "X") == 0) &&
+        (strcmp(info->ext_TCP, "X") == 0)) { //Getting Extern, if one wasn´t provided by the yser
         sprintf(message, "NODES %d", info->net);    //Get nodes list from Server
         if ((UDP_exch(message, buffer, args)) != 0) {
             free(message); //if Error
@@ -37,15 +65,23 @@ int reg(struct my_info *args, struct net_info *info) {
         sscanf(buffer, "%*s %*d %s %s", info->ext_IP, info->ext_TCP);   //Get neighbour from buffer
     }
 
-    sprintf(message, "REG %d %s %s", info->net, args->IP, args->TCP); //Construct REG message
-    if ((UDP_exch(message, buffer, args)) != 0) { //Send Reg message
-        perror("UDP Error");    //Check for errors within sending the message
-        free(message);
-        free(buffer);
-        return -1;
-    }
-    if (!strcmp(buffer, "OKREG")) { //Check if OKREG was received
-        perror("timeout");
+    free(message);
+    free(buffer);
+    return 0;
+
+}
+
+int unreg(struct my_info *args, struct net_info *info) {
+
+    char *message, *buffer;
+
+    if ((message = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+
+    sprintf(message, "UNREG %d %s %s", info->net, args->IP, args->TCP);
+    UDP_exch(message, buffer, args);
+    if (strcmp(buffer, "OKUNREG") != 0) {
+        perror("OKUNREG not received");
         free(message);
         free(buffer);
         return -1;
@@ -54,6 +90,7 @@ int reg(struct my_info *args, struct net_info *info) {
     free(message);
     free(buffer);
     return 0;
+
 }
 
 /***********************************************************************************************************************
@@ -89,7 +126,7 @@ int UDP_exch(char *message, char *buffer, struct my_info *args) {
         return -1;
     }
 
-    if ((n = sendto(serverfd, message, sizeof message, 0, res->ai_addr, res->ai_addrlen)) == -1) { //Send message
+    if ((n = sendto(serverfd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen)) == -1) { //Send message
         perror("Error sending message to UDP server");
         close(serverfd);
         freeaddrinfo(res);

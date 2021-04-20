@@ -62,22 +62,30 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
  **********************************************************************************************************************/
 enum state_main command_handle(char *command, struct net_info *info) {
 
-    char *aux;
+    char aux[6];
+    short int n;
 
-    if ((aux = (char *) malloc(CMDSIZE)) == NULL) perror("Unknown Command");
-    return wait;
+    if ((n = sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP)) == 3) {
+        strcpy(info->ext_IP, "X");
+        strcpy(info->ext_TCP, "X");
+        return get_nodeslist;
 
-    //Divide the command in its parts
-    sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP);
+    } else if (n != 5) {
 
-    //Compare command with available options
-    if (strcmp(aux, "join")) { //Case join
+        printf("Wrong number of arguments");
+        return wait;
+
+    } else if (strcmp(aux, "join") == 0) { //Case join TODO command leave
         return join;
-    } else if (strcmp(aux, "exit")) {   //Case exit
+    } else if (strcmp(aux, "exit") == 0) {   //Case exit
         return quit;
     } else {    //Other commands only work when connected to 0 net
         printf("Unknown Command, Available commands are:\n\t\t\t join \n\t\t\t exit");
         return wait;
     }
+
+
+    //Divide the command in its parts
+
 }
 

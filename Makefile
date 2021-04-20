@@ -1,21 +1,23 @@
-#NDN
+#Created with Makefile Creator
+
+CC=gcc
+CFLAGS=-g -Wall
+
+OBJECTS= main.o net.o registration.o user_interface.o 
+
+all: ndn
+
+ndn: $(OBJECTS)
+	$(CC) $(CFLAGS) -o ndn $(OBJECTS)
+
+main.o: main.c user_interface.h definition.h registration.h net.h
+
+net.o: net.c net.h definition.h registration.h
+
+registration.o: registration.c registration.h definition.h
+
+user_interface.o: user_interface.c user_interface.h definition.h
 
 
- CC=gcc
-
- CFLAGS = -g -Wall -std=c11
-
- OBJECTS = main.o user_interface.o registration.o
-
- ndn: $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
-
- main.o: main.c user_interface.h registration.h
-
- user_interface.o: user_interface.c user_interface.h registration.h
-
- registration.o: registration.c registration.h
-
- clean:
-	rm -f *.o ndn temp
-	make
+clean:
+	rm -f ndn *.o temp
