@@ -1,0 +1,49 @@
+#!/bin/bash
+#int-or-string.sh
+argv=("$@");
+argc=$#;
+
+printf "\n\tWelcome to the Makefile Creator by Tony\n_____________________________________________________________\n\n"
+
+if [ -z "$1" ]; then
+  printf "\tPlease Specify Executable Name!\n"
+  printf "Input can be Executable Name / Flags"
+  printf "\n_____________________________________________________________\n\n"
+  exit 1
+fi
+
+rm -f Makefile *.o ndn temp >/dev/null
+
+if [ -z "$2" ]; then
+  printf "#Created with Makefile Creator\n\nCC=gcc\nCFLAGS=-g -Wall\n\n" >>Makefile
+else
+  printf "#Created with Makefile Creator\n\nCC=gcc\nCFLAGS= " >>Makefile
+
+  for((i=1;i<argc;i++)); do
+    printf "%s " "${argv[i]}" >>Makefile
+  done
+  printf "\n" >>Makefile
+fi
+
+printf "OBJECTS= " >>Makefile
+for f in *.c; do
+  printf "${f%.c}"'%s.o ' >>Makefile
+done
+
+printf "\n\nall: $1" >>Makefile
+
+printf "\n\n$1: \$(OBJECTS)\n\t\$(CC) \$(CFLAGS) -o $1 \$(OBJECTS)\n\n" >>Makefile
+printf "Files Found:\n\n"
+a=1
+for f in *.c; do
+  echo "$a : $f"
+  gcc -MM "$f" >>Makefile
+  printf "\n" >>Makefile
+  let "a += 1"
+done
+
+printf "\nclean:\n\trm -f $1 *.o temp" >>Makefile
+
+printf "\n_____________________________________________________________\n\n\tThank you for choosing Tony Airlines once more\n\n"
+
+exit 0
