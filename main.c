@@ -7,6 +7,7 @@
 #include "definition.h"
 #include "net.h"
 
+
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info); //Memory Allocation
 void info_free(struct my_info *args, struct net_info *info); //Memory "Deallocation"
@@ -16,7 +17,9 @@ int main(int argc, char **argv) {
     struct my_info args;    //Info about myself
     struct net_info info;   //Info about the net I´m in
     char command[CMDSIZE];  //Command Buffer
+    int ext_fd;
     enum state_main state = wait;   //State switch
+
 
     printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
 
@@ -37,13 +40,16 @@ int main(int argc, char **argv) {
                 break;
 
             case join:
-                if (TCP_client(&info) <= 1) state = err;
+                if ((ext_fd = TCP_client(&info)) <= 0) state = err;
+
                 if (reg(&args, &info) != 0) state = err;
                 state = connected;
+
                 break;
 
             case connected:
                 printf("CONNECTED");
+                if (TCP_server(&args, &info) != 0) state = err;
                 if (unreg(&args, &info) != 0) state = err;
                 else state = wait;
                 break;

@@ -9,4 +9,5 @@
 
 int TCP_client(struct net_info *info);
 
+void show_topology(struct net_info *info);
 #endif //PROJETO_DT_NET_H

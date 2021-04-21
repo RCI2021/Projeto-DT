@@ -3,12 +3,16 @@
 CC=gcc
 CFLAGS=-g -Wall
 
-OBJECTS= main.o net.o registration.o user_interface.o 
+OBJECTS= main.o net.o registration.o user_interface.o
 
 all: ndn
 
 ndn: $(OBJECTS)
 	$(CC) $(CFLAGS) -o ndn $(OBJECTS)
+
+#expedition.o: expedition.c expedition.h
+
+#linked_list.o: linked_list.c linked_list.h
 
 main.o: main.c user_interface.h definition.h registration.h net.h
 
