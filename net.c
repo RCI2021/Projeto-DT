@@ -90,8 +90,31 @@ int TCP_client(struct net_info *info) { //RETURN FD
     } else sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
 
     freeaddrinfo(res);
-    show_topology(&info);
+    if (!tree_Isemprty(exp)) {
+
+        tree_adv(exp);
+
+    }
     return fd;
+}
+
+int send_adv(int id, int fd) {
+
+    char *ptr, buffer[12];
+    int nleft, nwritten;
+
+    sprintf(buffer, "ADVERTISE %d\n", id);
+
+    nleft = strlen(buffer);
+    while (nleft > 0) {
+        nwritten = write(fd, ptr, nleft);
+        if (nwritten <= 0) return -1;
+        nleft -= nwritten;
+        ptr += nwritten;
+    }
+
+    return 0;
+
 }
 
 int TCP_server(struct my_info *args, struct net_info *info) {
@@ -223,12 +246,4 @@ int TCP_server(struct my_info *args, struct net_info *info) {
             }
         }
     }
-
-
-}
-
-void show_topology(struct net_info *info) {
-
-    printf("Extern: %s:%s TCP: %s:%s", info->ext_IP, info->ext_TCP, info->rec_IP, info->rec_TCP);
-
 }
