@@ -7,7 +7,7 @@
 #include "definition.h"
 #include "net.h"
 #include "linked_list.h"
-
+#include "expedition.h"
 
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info); //Memory Allocation
@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
     char command[CMDSIZE];  //Command Buffer
     int ext_fd;
     enum state_main state = wait;   //State switch
-    struct socket_list *skt_list = NULL;
-
+    struct socket_list *list = NULL;
+    exp_tree *tree = NULL;
 
     printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
 
@@ -42,8 +42,7 @@ int main(int argc, char **argv) {
                 break;
 
             case join:
-                if ((ext_fd = TCP_client(&info, skt_list)) <= 0) state = err;
-
+                if ((ext_fd = TCP_client(&info, list, tree)) <= 0) state = err;
                 if (reg(&args, &info) != 0) state = err;
                 state = connected;
 
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
 
             case connected:
                 printf("CONNECTED");
-                if (TCP_server(&args, &info) != 0) state = err;
+                if (TCP_server(&args, &info, list, tree) != 0) state = err;
                 if (unreg(&args, &info) != 0) state = err;
                 else state = wait;
                 break;

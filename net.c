@@ -14,13 +14,13 @@
 #include "registration.h"
 #include "linked_list.h"
 
-int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) { //RETURN FD
 
     fd_set rfds;
     struct addrinfo hints, *res;
     int fd, errcode;
     ssize_t nbytes, nleft, nwritten, nread;
-    char *ptr, buffer[BUFFERSIZE]; //Question ptr não devia ser inteiro
+    char *ptr, buffer[BUFFERSIZE];
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) return -1;
@@ -36,7 +36,7 @@ int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
     if (errcode == -1) return -1;
 
     sprintf(buffer, "NEW %d\n", info->id);
-    ptr = &buffer[0];  //question este ptr é para q?
+    ptr = &buffer[0];
     nbytes = (4 + sizeof(info->id));
 
     nleft = nbytes;
@@ -46,7 +46,7 @@ int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
         nleft -= nwritten;
         ptr += nwritten;
     }
-    nbytes = 30; //question EXT +3?
+    nbytes = BUFFERSIZE;
     nleft = nbytes;
     ptr = buffer;
 
@@ -54,7 +54,8 @@ int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
     FD_SET(0, &rfds);
     FD_SET(fd, &rfds);
 
-    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL); ///ver situação em q n há mais nós
+    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL,
+                     (struct timeval *) NULL); ///ver situação em q n há mais nós
 
     if (errcode <= 0) {
         perror("Select error");
@@ -91,48 +92,24 @@ int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
     } else sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
 
     freeaddrinfo(res);
-    /*if (!tree_Isempty(exp)) {
 
-        tree_adv(exp);
-
-    }*/
-
+    send_tree(tree, fd);
     list = insertList(list, fd);
 
 
     return fd;
 }
 
-int send_adv(int id, int fd) {
 
-    char *ptr, buffer[13];
-    int nleft, nwritten;
-
-    sprintf(buffer, "ADVERTISE %d\n", id);
-
-    nleft = strlen(buffer);
-    ptr = buffer;
-
-    while (nleft > 0) {
-        nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) return -1;
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-
-    return 0;
-}
-
-int TCP_server(struct my_info *args, struct net_info *info) {
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, connect_fd, errcode, max_fd, count, buffer_id;
+    int listen_fd, new_fd, current_fd, errcode, max_fd, count, buffer_id;
     fd_set rfds_current, rfds;
-    ssize_t n_read, n_write;
     struct sockaddr addr;
     socklen_t addrlen;
-    char *ptr, *buffer, *buffer_name;
-    struct socket_list *head_fd = NULL, *list_fd = NULL;   //TODO inicializar logo aqui?
+    char *buffer, *buffer_name;
+    struct socket_list *aux;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -150,8 +127,9 @@ int TCP_server(struct my_info *args, struct net_info *info) {
     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
 
     FD_SET(0, &rfds);
+    max_fd = FD_setlist(list, &rfds);
 
-    while (/*TODO keyboard=leave*/1) {
+    while (strcmp(buffer, "leave\n") != 0) {
 
         addrlen = sizeof addr;
         rfds_current = rfds;
@@ -166,7 +144,6 @@ int TCP_server(struct my_info *args, struct net_info *info) {
                 FD_CLR(listen_fd, &rfds);
                 addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
-                list_fd = insertList(head_fd, new_fd);
                 FD_SET(new_fd, &rfds);
 
             } else if (FD_ISSET(0, &rfds_current)) {
@@ -182,15 +159,15 @@ int TCP_server(struct my_info *args, struct net_info *info) {
                 } else if (strncmp(buffer, "get", 3)) {
 
                     sscanf(buffer, "%*s %s", buffer_name);
-                    sscanf(buffer_name, "%d", buffer_id);
+                    sscanf(buffer_name, "%d", &buffer_id);
 
-                    if (buffer_id == info->id)
-                        if (/*search_Item(buffer_name, local) < 0*/ buffer != NULL) {
+                    if (buffer_id == info->id) {
+                        /*if (search_Item(buffer_name, local) < 0 buffer != NULL) {
 
                             sprintf(buffer, "NODATA %s\n", buffer_name);
-                            //write(//todo, buffer, sizeof buffer);
+                            write(//todo, buffer, sizeof buffer);
 
-                            /*else if(buffer != NULL){
+                            else if(buffer != NULL){
                                 sprintf(buffer, "DATA %s\n", buffer_name);
                                 write(todo, buffer, sizeof buffer);
 
@@ -206,51 +183,102 @@ int TCP_server(struct my_info *args, struct net_info *info) {
                                 write(/TODO, buffer, sizeof buffer);
                             }
 
+                        }*/} else {
 
-                        } else if (strncmp(buffer, "show topology", sizeof "show topology") || strncmp(buffer, "st", 2)) {
+                        if ((current_fd = find_socket(buffer_id, tree)) < 1) return -1;//TODO error
+                        TCP_send(buffer, current_fd);
 
-                            printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
-                                   info->rec_TCP);
+                    }
 
-                        } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
-                            print_Tree(TODO);
-                        } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
+                } else if (strncmp(buffer, "show topology", sizeof "show topology") == 0 ||
+                           strncmp(buffer, "st", 2) == 0) {
 
-                            printf("Cache currently stored:\n1: %s \n2: %s\n", cache->name[0], cache->name[1]);
+                    printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
+                           info->rec_TCP);
 
-                        } else if (strcmp(buffer, LV)) {
-                            //TODOlv;
-                        } else //TODOkb_error;
-
-                } else {
-                    for (list_fd = head_fd; list_fd->next != NULL; list_fd = list_fd->next) {
-
-                        if (FD_ISSET(list_fd->fd, &rfds_current)) {
-
-                            int n; ///
-                            if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
-                                if (n == -1) return -1;//TODO ERROR
-                                buffer[n] = '\0';
-
-                                if (strncmp(buffer, "EXTERN", sizeof "EXTERN")) {
-                                    //TODOext;
-                                } else if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE")) {
-                                    //advertise()//TODOadv;
-                                } else if (strncmp(buffer, "WITHDRAW", sizeof "WITHDRAW")) {
-                                    //TODOwit;
-                                } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST")) {
-                                    //TODOinterest;
-                                } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
-                                    //TODOd;
-                                } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
-                                    //TODOnod;
-                                } else //TODOerr;
-                            }
-                        }*/
-                        }
+                } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
+                    print_Tree(tree);
+                } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
+                    //TODO
                 }
+            } else {
+                for (aux = list; aux->next != NULL; aux = aux->next) {
+
+                    if (FD_ISSET(aux->fd, &rfds_current)) {
+
+                        int n; ///
+                        if ((n = TCP_rcv(aux->fd, buffer)) != 0) { //Recieve message
+                            if (n == -1) return -1;//TODO ERROR
+                            buffer[n] = '\0';
+
+                        } else if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE")) {
+
+                            sscanf(buffer, "%*s %d", &buffer_id);
+                            insert(buffer_id, aux->fd, tree);
+                            TCP_send_all(buffer, list, aux->fd);
+
+                        } else if (strncmp(buffer, "WITHDRAW", sizeof "WITHDRAW")) {
+
+                            sscanf(buffer, "%*s %d", &buffer_id);
+                            delete(buffer_id, tree);
+                            TCP_send_all(buffer, list, aux->fd);
+
+                        } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST")) {
+                            //TODOinterest;
+                        } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
+                            //TODOd;
+                        } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
+                            //TODOnod;
+                        }
+                    }
+                }
+
             }
         }
-        return 0;
     }
+    return 0;
+}
+
+
+void TCP_send(char *buffer, int fd) {
+
+    char *ptr = buffer;
+    int nleft, nwritten;
+    nleft = strlen(buffer);
+
+    while (nleft > 0) {
+        nwritten = write(fd, ptr, nleft);
+        nleft -= nwritten;
+        ptr += nwritten;
+    }
+
+    return;
+}
+
+void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
+
+    struct socket_list *aux = list;
+
+    for (; aux->next != NULL; aux = aux->next) {
+
+        if (fd != aux->fd) TCP_send(buffer, aux->fd);
+
+    }
+    return;
+}
+
+int TCP_rcv(int fd, char *buffer) {
+
+    char *ptr = buffer;
+    int nread, nleft;
+
+    while (nleft > 0) {
+        nread = read(fd, ptr, nleft);
+        if (nread <= 0) break;
+        nleft -= nread;
+        ptr += nread;
+        if (buffer[nread - 1] == '\n') break;
+    }
+
+    return nread;
 }

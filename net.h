@@ -6,12 +6,20 @@
 #define PROJETO_DT_NET_H
 
 #include "definition.h"
+#include "expedition.h"
 
-int TCP_client(struct net_info *info, struct socket_list *tree);
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree);
 
 void show_topology(struct net_info *info);
 
 int send_adv(int id, int fd);
 
-int TCP_server(struct my_info *args, struct net_info *info);
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree);
+
+int TCP_rcv(int fd, char *buffer);
+
+void TCP_send_all(char *buffer, struct socket_list *list, int fd);
+
+void TCP_send(char *buffer, int fd);
+
 #endif //PROJETO_DT_NET_H

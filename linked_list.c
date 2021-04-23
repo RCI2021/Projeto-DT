@@ -3,7 +3,8 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <sys/types.h>
+#include <unistd.h>
 #include "linked_list.h"
 
 struct socket_list *initLinkedList(void) {
@@ -27,6 +28,21 @@ struct socket_list *insertList(struct socket_list *next, int fd) {
     return new;
 }
 
+int FD_setlist(struct socket_list *list, fd_set *rfds) {
+
+    struct socket_list *aux = list;
+    int max = 0;
+    if (aux != NULL) {
+        for (; aux->next != NULL; aux = aux->next) {
+
+            FD_SET(aux->fd, rfds);
+            if (aux->fd > max)max = aux->fd;
+        }
+    }
+    return max;
+
+}
+
 void freeList(struct socket_list *first) {
     struct socket_list *aux, *next;
 
@@ -39,7 +55,7 @@ void freeList(struct socket_list *first) {
 
 int getSocket(struct socket_list *node) {
     if (node == NULL)  /* Check that node is not empty */
-        return NULL;
+        return -1;
 
     return node->fd;
 }

@@ -5,7 +5,7 @@
 #ifndef PROJETO_DT_DEFINITION_H
 #define PROJETO_DT_DEFINITION_H
 
-#define UDPSERVER "tejo.tecnico.ulisboa.pt"
+#define UDPSERVER "193.136.138.142"
 #define UDPPORT "59000"
 #define IPSIZE 100
 #define TCPSIZE 100

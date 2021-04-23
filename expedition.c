@@ -9,11 +9,11 @@
 
 
 //inserts node in tree of nodes
-link *insert(int id, int fd, link *tree) {
+exp_tree *insert(int id, int fd, exp_tree *tree) {
 
     int h1, h2, h3;
     if (tree == NULL) { //tree is empty
-        tree = (link*) malloc(sizeof(link));
+        tree = (exp_tree *) malloc(sizeof(exp_tree));
         tree->id = id;
         tree->fd = id;
         tree->left = tree->right = NULL;
@@ -59,8 +59,8 @@ link *insert(int id, int fd, link *tree) {
 }
 
 
-link *rotate_right(link *tree) {
-    link * x, *y, *beta;
+exp_tree *rotate_right(exp_tree *tree) {
+    exp_tree *x, *y, *beta;
 
     if (tree == NULL) return tree;
     else if (tree->left == NULL) return tree;
@@ -68,15 +68,15 @@ link *rotate_right(link *tree) {
     y = tree;
     x = tree->left;
     beta = x->right;
-    // updates links
+    // updates exp_trees
     x->right = y;
     y->left = beta;
 
     return x;
 }
 
-link *rotate_left(link *tree) {
-    link *x, *y, *beta;
+exp_tree *rotate_left(exp_tree *tree) {
+    exp_tree *x, *y, *beta;
 
     if (tree == NULL) return tree;
     else if (tree->right == NULL) return tree;
@@ -84,7 +84,7 @@ link *rotate_left(link *tree) {
     x = tree;
     y = tree->right;
     beta = y->left;
-    // updates links
+    // updates exp_trees
     y->left = x;
     x->right = beta;
 
@@ -92,7 +92,7 @@ link *rotate_left(link *tree) {
 }
 
 /* checks height of tree */
-int height(link *tree) {
+int height(exp_tree *tree) {
     int hl, hr;
     if (tree == NULL) return 0;
     if (tree->left == NULL && tree->right == NULL)
@@ -103,32 +103,32 @@ int height(link *tree) {
 }
 
 //merges two trees (used when deleting node)
-link *join(link *a, link *b) {
+exp_tree *merge(exp_tree *a, exp_tree *b) {
     if (a == NULL) return b;
     if (b == NULL) return a;
     b = insert(a->id, a->fd, b);
-    b = join(a->left, b);
-    b = join(a->right, b);
+    b = merge(a->left, b);
+    b = merge(a->right, b);
     free(a);
     return b;
 }
 
-//deletes node (join avoids losing rest of tree)
-link *delete(int id, link *tree) {
-    link * aux = tree;
+//deletes node (merge avoids losing rest of tree)
+exp_tree *delete(int id, exp_tree *tree) {
+    exp_tree *aux = tree;
     if (tree == NULL) return NULL;
     if (id < tree->id) tree->left = delete(id, tree->left);
     if (id > tree->id) tree->right = delete(id, tree->right);
     if (id == tree->id) {
-        tree = join(tree->left, tree->right);
+        tree = merge(tree->left, tree->right);
         free(aux);
     }
     return tree;
 }
 
-int find_socket(int id, link *tree) {
+int find_socket(int id, exp_tree *tree) {
 
-    link * aux = tree;
+    exp_tree *aux = tree;
     if (aux == NULL) return -1; //no socket found
 
     while (aux->left != NULL && aux->right != NULL) {
@@ -144,7 +144,7 @@ int find_socket(int id, link *tree) {
 }
 
 //prints tree in post-fixed
-void print_Tree(link *tree) {       //TODO fct send socket
+void print_Tree(exp_tree *tree) {       //TODO fct send socket
 
     if (tree == NULL) return;
     if (tree->left != NULL) print_Tree(tree->left);
@@ -154,12 +154,17 @@ void print_Tree(link *tree) {       //TODO fct send socket
     return;
 }
 
-link *send_tree(link *tree, int fd) {       //TODO fct send socket
+exp_tree *send_tree(exp_tree *tree, int fd) {       //TODO fct send socket
+
+    char buffer[BUFFERSIZE];
 
     if (tree == NULL) return NULL;
-    if (tree->left != NULL) print_Tree(tree->left);
-    send_adv(tree->id, fd);
-    if (tree->right != NULL) print_Tree(tree->right);
+    if (tree->left != NULL) send_tree(tree->left, fd);
+
+    sprintf(buffer, "ADVERTISE %d\n", tree->id);
+    TCP_send(buffer, fd);
+    if (tree->right != NULL) send_tree(tree->right, fd);
 
     return tree;
 }
+

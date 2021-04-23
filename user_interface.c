@@ -18,17 +18,25 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
     unsigned int b1, b2, b3, b4, port;
     char aux[128];
 
-    if (argc != 5) { //Is the number of arguments correct?
-        printf("Not enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
-        return -1;
-    }
-
-//TODO servidor por omissão
     strcpy(args->IP, argv[1]);
     strcpy(args->TCP, argv[2]);
-    strcpy(args->regIP, argv[3]);
-    strcpy(args->regUDP, argv[4]);
-    //Check argv[1] for Node´s IP Address
+
+    if (argc == 3) {
+
+        strcpy(args->regIP, UDPSERVER);
+        strcpy(args->regUDP, UDPPORT);
+
+    } else if (argc == 5) { //Is the number of arguments correct?
+
+        strcpy(args->regIP, argv[3]);
+        strcpy(args->regUDP, argv[4]);
+
+    } else {
+
+        printf("Not enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
+        return -1;
+
+    }    //Check argv[1] for Node´s IP Address
     if (sscanf(args->IP, "%u.%u.%u.%u%s", &b1, &b2, &b3, &b4, aux) != 4 || b1 > 255 || b2 > 255 || b3 > 255 ||
         b4 > 255) {
         printf("Error: Bad <ip_addr>\n");   //LAMP
@@ -70,7 +78,7 @@ enum state_main command_handle(char *command, struct net_info *info) {
         strcpy(info->ext_TCP, "X");
         return get_nodeslist;
 
-    } else if (n != 5) {
+    } else if ((n != 5) && (n != 1)) {
 
         printf("Wrong number of arguments");
         return wait;
