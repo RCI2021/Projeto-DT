@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
                 break;
 
             case connected:
-                printf("CONNECTED");
+                printf("CONNECTED\n");
                 if (TCP_server(&args, &info, list, tree) != 0) state = err;
                 if (unreg(&args, &info) != 0) state = err;
                 else state = wait;

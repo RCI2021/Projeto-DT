@@ -96,7 +96,6 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     send_tree(tree, fd);
     list = insertList(list, fd);
 
-
     return fd;
 }
 
@@ -133,7 +132,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
         addrlen = sizeof addr;
         rfds_current = rfds;
-        count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
+
+        count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL); //TODO fd stdin está a ser apagado?
 
         if (count < 1) return -1;//TODO ERROR
 
@@ -151,12 +151,12 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 FD_CLR(0, &rfds);
                 fgets(buffer, BUFFERSIZE, stdin);
 
-                if (strncmp(buffer, "create", 6)) {
+                if (strncmp(buffer, "create", 6) == 0) {
 
                     sscanf(buffer, "%*s %s", buffer); //TODO podemos usar o destino e a origem no mesmo ?
                     //add_Item(buffer, local); //Adicionar o item à base de dados local
 
-                } else if (strncmp(buffer, "get", 3)) {
+                } else if (strncmp(buffer, "get", 3) == 0) {
 
                     sscanf(buffer, "%*s %s", buffer_name);
                     sscanf(buffer_name, "%d", &buffer_id);
@@ -190,8 +190,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     }
 
-                } else if (strncmp(buffer, "show topology", sizeof "show topology") == 0 ||
-                           strncmp(buffer, "st", 2) == 0) {
+                } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st") == 0)) {
 
                     printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
                            info->rec_TCP);
