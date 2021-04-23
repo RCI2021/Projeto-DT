@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "expedition.h"
+#include "net.h"
 
 
 //inserts node in tree of nodes
@@ -19,7 +20,11 @@ link *insert(int id, int fd, link *tree) {
         return tree;
     }
 
-    if (id == tree->id) return tree; //is already inserted
+    if (id == tree->id){
+        tree->fd = fd;
+        return tree; //switch for new fd
+    }
+
     if (id < tree->id){
     //inserted in left sub-tree
         tree->left = insert(id, fd, tree->left);
@@ -139,12 +144,22 @@ int find_socket(int id, link *tree) {
 }
 
 //prints tree in post-fixed
-void print_Tree(link *tree) {
+void print_Tree(link *tree) {       //TODO fct send socket
 
     if (tree == NULL) return;
-    if (tree->left == NULL) print_Tree(tree->left);
+    if (tree->left != NULL) print_Tree(tree->left);
     printf("Node: %d | Socket: %d\n", tree->id, tree->fd);
-    if (tree->right == NULL) print_Tree(tree->right);
+    if (tree->right != NULL) print_Tree(tree->right);
 
     return;
+}
+
+link *send_tree(link *tree, int fd) {       //TODO fct send socket
+
+    if (tree == NULL) return NULL;
+    if (tree->left != NULL) print_Tree(tree->left);
+    send_adv(tree->id, fd);
+    if (tree->right != NULL) print_Tree(tree->right);
+
+    return tree;
 }

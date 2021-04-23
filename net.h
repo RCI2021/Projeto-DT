@@ -7,7 +7,11 @@
 
 #include "definition.h"
 
-int TCP_client(struct net_info *info);
+int TCP_client(struct net_info *info, struct socket_list *tree);
 
 void show_topology(struct net_info *info);
+
+int send_adv(int id, int fd);
+
+int TCP_server(struct my_info *args, struct net_info *info);
 #endif //PROJETO_DT_NET_H

@@ -6,6 +6,7 @@
 #include "registration.h"
 #include "definition.h"
 #include "net.h"
+#include "linked_list.h"
 
 
 //Function Definitions
@@ -19,6 +20,7 @@ int main(int argc, char **argv) {
     char command[CMDSIZE];  //Command Buffer
     int ext_fd;
     enum state_main state = wait;   //State switch
+    struct socket_list *skt_list = NULL;
 
 
     printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
@@ -40,7 +42,7 @@ int main(int argc, char **argv) {
                 break;
 
             case join:
-                if ((ext_fd = TCP_client(&info)) <= 0) state = err;
+                if ((ext_fd = TCP_client(&info, skt_list)) <= 0) state = err;
 
                 if (reg(&args, &info) != 0) state = err;
                 state = connected;
@@ -68,6 +70,7 @@ int main(int argc, char **argv) {
     return 0;
 
 }
+
 
 /***********************************************************************************************************************
  * Function to allocate memory required throughout the program

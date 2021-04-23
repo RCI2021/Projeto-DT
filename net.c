@@ -12,8 +12,9 @@
 #include <unistd.h>
 #include "net.h"
 #include "registration.h"
+#include "linked_list.h"
 
-int TCP_client(struct net_info *info) { //RETURN FD
+int TCP_client(struct net_info *info, struct socket_list *list) { //RETURN FD
 
     fd_set rfds;
     struct addrinfo hints, *res;
@@ -53,7 +54,7 @@ int TCP_client(struct net_info *info) { //RETURN FD
     FD_SET(0, &rfds);
     FD_SET(fd, &rfds);
 
-    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
+    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL); ///ver situação em q n há mais nós
 
     if (errcode <= 0) {
         perror("Select error");
@@ -90,22 +91,28 @@ int TCP_client(struct net_info *info) { //RETURN FD
     } else sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
 
     freeaddrinfo(res);
-    if (!tree_Isemprty(exp)) {
+    /*if (!tree_Isempty(exp)) {
 
         tree_adv(exp);
 
-    }
+    }*/
+
+    list = insertList(list, fd);
+
+
     return fd;
 }
 
 int send_adv(int id, int fd) {
 
-    char *ptr, buffer[12];
+    char *ptr, buffer[13];
     int nleft, nwritten;
 
     sprintf(buffer, "ADVERTISE %d\n", id);
 
     nleft = strlen(buffer);
+    ptr = buffer;
+
     while (nleft > 0) {
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0) return -1;
@@ -114,7 +121,6 @@ int send_adv(int id, int fd) {
     }
 
     return 0;
-
 }
 
 int TCP_server(struct my_info *args, struct net_info *info) {
@@ -126,26 +132,26 @@ int TCP_server(struct my_info *args, struct net_info *info) {
     struct sockaddr addr;
     socklen_t addrlen;
     char *ptr, *buffer, *buffer_name;
-    struct socket_list *head_fd, *list_fd;
+    struct socket_list *head_fd = NULL, *list_fd = NULL;   //TODO inicializar logo aqui?
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
-    memset(hints, 0, sizeof hints);
+    memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if ((errcode = getaddrinfo(NULL, port, &hints, &res)) == -1) return -1;
+    if ((errcode = getaddrinfo(NULL, args->TCP, &hints, &res)) == -1) return -1;
 
     if (bind(listen_fd, res->ai_addr, res->ai_addrlen) == -1) return -1;
-    if (listen(listen_fd, QUEUELENGHT) == -1) return -1;
+    if (listen(listen_fd, 5) == -1) return -1;
 
     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
 
     FD_SET(0, &rfds);
 
-    while (/*TODO keyboard=leave*/) {
+    while (/*TODO keyboard=leave*/1) {
 
         addrlen = sizeof addr;
         rfds_current = rfds;
@@ -157,10 +163,10 @@ int TCP_server(struct my_info *args, struct net_info *info) {
 
             if (FD_ISSET(listen_fd, &rfds_current)) {
 
-                FD_CLR(fd, &rfds);
+                FD_CLR(listen_fd, &rfds);
                 addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
-                add_item_list(new_fd, head_fd);
+                list_fd = insertList(head_fd, new_fd);
                 FD_SET(new_fd, &rfds);
 
             } else if (FD_ISSET(0, &rfds_current)) {
@@ -168,47 +174,46 @@ int TCP_server(struct my_info *args, struct net_info *info) {
                 FD_CLR(0, &rfds);
                 fgets(buffer, BUFFERSIZE, stdin);
 
-                if (strcmp(buffer, CREATE)) {
+                if (strncmp(buffer, "create", 6)) {
 
                     sscanf(buffer, "%*s %s", buffer); //TODO podemos usar o destino e a origem no mesmo ?
-                    add_Item(buffer, local); //Adicionar o item à base de dados local
+                    //add_Item(buffer, local); //Adicionar o item à base de dados local
 
-                } else if (strcmp(buffer, GET)) {
+                } else if (strncmp(buffer, "get", 3)) {
 
                     sscanf(buffer, "%*s %s", buffer_name);
                     sscanf(buffer_name, "%d", buffer_id);
 
                     if (buffer_id == info->id)
-                        if (search_Item(buffer_name, local) < 0) {
+                        if (/*search_Item(buffer_name, local) < 0*/ buffer != NULL) {
 
-                            sprintf(buffer, "%s %s\n", NOD, buffer_name);
-                            write(/*todo*/, buffer, sizeof buffer);
+                            sprintf(buffer, "NODATA %s\n", buffer_name);
+                            //write(//todo, buffer, sizeof buffer);
 
-                            else {
-
-                                sprintf(buffer, "%s %s\n", D, buffer_name);
-                                write(/*todo*/, buffer, sizeof buffer);
+                            /*else if(buffer != NULL){
+                                sprintf(buffer, "DATA %s\n", buffer_name);
+                                write(todo, buffer, sizeof buffer);
 
                             }else if (search_Item(buffer_name, cache) < 0) {
 
                                 //TODO get fd of next knot to send
                                 sprintf(buffer, "%s %s\n", INTEREST, buffer_name);
-                                write(/*todo*/, buffer, sizeof buffer);
+                                write(todo, buffer, sizeof buffer);
 
                             } else {
 
                                 sprintf(buffer, "%s %s\n", D, buffer_name);
-                                write(/*TODO*/, buffer, sizeof buffer);
+                                write(/TODO, buffer, sizeof buffer);
                             }
 
 
-                        } else if (strcmp(buffer, ST1) || strcmp(buffer, ST2)) {
+                        } else if (strncmp(buffer, "show topology", sizeof "show topology") || strncmp(buffer, "st", 2)) {
 
                             printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
                                    info->rec_TCP);
 
                         } else if (strcmp(buffer, SR1) || strcmp(buffer, SR2)) {
-                            print_Tree(/*TODO*/);
+                            print_Tree(TODO);
                         } else if (strcmp(buffer, SC1) || strcmp(buffer, SC2)) {
 
                             printf("Cache currently stored:\n1: %s \n2: %s\n", cache->name[0], cache->name[1]);
@@ -222,28 +227,30 @@ int TCP_server(struct my_info *args, struct net_info *info) {
 
                         if (FD_ISSET(list_fd->fd, &rfds_current)) {
 
+                            int n; ///
                             if ((n = read(list_fd->fd, buffer, BUFFERSIZE)) != 0) {
                                 if (n == -1) return -1;//TODO ERROR
                                 buffer[n] = '\0';
 
-                                if (strncmp(buffer, EXT, sizeof EXT)) {
+                                if (strncmp(buffer, "EXTERN", sizeof "EXTERN")) {
                                     //TODOext;
-                                } else if (strncmp(buffer, ADV, sizeof ADV)) {
-                                    advertise()//TODOadv;
-                                } else if (strncmp(buffer, WIT, sizeof WIT)) {
+                                } else if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE")) {
+                                    //advertise()//TODOadv;
+                                } else if (strncmp(buffer, "WITHDRAW", sizeof "WITHDRAW")) {
                                     //TODOwit;
-                                } else if (strncmp(buffer, INTEREST, sizeof INTEREST)) {
+                                } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST")) {
                                     //TODOinterest;
-                                } else if (strncmp(buffer, D, sizeof D)) {
+                                } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
                                     //TODOd;
-                                } else if (strncmp(buffer, NOD, sizeof NOD)) {
+                                } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
                                     //TODOnod;
                                 } else //TODOerr;
                             }
+                        }*/
                         }
-                    }
                 }
             }
         }
+        return 0;
     }
 }
