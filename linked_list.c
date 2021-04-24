@@ -36,7 +36,7 @@ int FD_setlist(struct socket_list *list, fd_set *rfds) {
         for (; aux->next != NULL; aux = aux->next) {
 
             FD_SET(aux->fd, rfds);
-            if (aux->fd > max)max = aux->fd;
+            if (aux->fd > max) max = aux->fd;
         }
     }
     return max;

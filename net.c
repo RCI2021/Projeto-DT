@@ -141,14 +141,12 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
             if (FD_ISSET(listen_fd, &rfds_current)) {
 
-                FD_CLR(listen_fd, &rfds);
                 addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
                 FD_SET(new_fd, &rfds);
 
             } else if (FD_ISSET(0, &rfds_current)) {
 
-                FD_CLR(0, &rfds);
                 fgets(buffer, BUFFERSIZE, stdin);
 
                 if (strncmp(buffer, "create", 6) == 0) {
@@ -190,7 +188,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     }
 
-                } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st") == 0)) {
+                } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
                     printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
                            info->rec_TCP);
