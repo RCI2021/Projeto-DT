@@ -13,6 +13,8 @@
 #include "net.h"
 #include "registration.h"
 #include "linked_list.h"
+#include "cache.h"
+
 
 int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) { //RETURN FD
 
@@ -105,12 +107,16 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
 int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, current_fd, errcode, max_fd, count, buffer_id, n;
+    int listen_fd, new_fd, current_fd, interest_fd, errcode, max_fd, count, buffer_id, n;
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
     char *buffer, *buffer_name;
     struct socket_list *aux;
+    struct Cache local, cache;
+
+    if (cache_init(local, LOCALSIZE) != LOCALSIZE) return -1;
+    if (cache_init(cache, CACHESIZE) != CACHESIZE) return -1;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -130,9 +136,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
     max_fd = FD_setlist(list, &rfds);
+    if (listen_fd > max_fd) max_fd = listen_fd;
 
     while (strcmp(buffer, "leave\n") != 0) {
-
 
         addrlen = sizeof addr;
         rfds_current = rfds;
@@ -156,8 +162,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 if (strncmp(buffer, "create", 6) == 0) {
 
-                    sscanf(buffer, "%*s %s", buffer); //TODO podemos usar o destino e a origem no mesmo ?
-                    //add_Item(buffer, local); //Adicionar o item à base de dados local
+                    sscanf(buffer, "%*s %s", &buffer_name);
+                    cache_add(buffer_name, local);
 
                 } else if (strncmp(buffer, "get", 3) == 0) {
 
@@ -201,7 +207,12 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
                     print_Tree(tree);
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
-                    //TODO
+
+                    printf("Names stored in Local:\n");
+                    cache_print(local);
+                    printf("Names stored in Cache:\n")
+                    cache_print(cache);
+
                 }
             } else {
                 for (aux = list; aux->next != NULL; aux = aux->next) {
@@ -237,6 +248,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
             }
         }
     }
+
     return 0;
 }
 

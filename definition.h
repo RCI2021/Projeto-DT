@@ -10,6 +10,8 @@
 #define IPSIZE 100
 #define TCPSIZE 100
 #define BUFFERSIZE 128
+#define LOCALSIZE 10
+#define CACHESIZE 2
 
 struct my_info {
     char *IP;

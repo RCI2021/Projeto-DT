@@ -2,6 +2,7 @@
 // Created by anton on 24/04/2021.
 //
 #include <stdlib.h>
+#include <string.h>
 #include "cache.h"
 #include "definition.h"
 
@@ -33,15 +34,16 @@ int cache_add(char *name, struct Cache *cache) {
     for (i = 0; i < cache->size; i++) {
         if (cache->name[i] == NULL) {
 
-            //TODO change
-
+            strcpy(cache->name[i], name);
+            return i;
         }
     }
 
     for (i = 0; i < cache->size; i++) {
         if (cache->last_used != i) {
 
-            //TODO change
+            strcpy(cache->name[i], name);
+            return i;
 
         }
     }
@@ -55,8 +57,8 @@ int cache_rm(char *name, struct Cache *cache) {
 
         if (strcmp(cache->name[i], name) == 0) {
 
-            //TODO remove name
-
+            strcpy(cache->name[i], "\0");
+            break;
         }
     }
 }
@@ -67,15 +69,19 @@ int cache_search(char *name, struct Cache *cache) {
 
     for (i = 0; i < cache->size; i++) {
 
-        if (strcmp(cache->name[i], name) == 0) {
+        if (strcmp(cache->name[i], name) == 0) return i;
 
-            //TODO return position name
-
-        }
     }
-//return nodata
+    return -1;
 }
 
+void cache_print(struct Cache *cache) {
+
+    int i;
+
+    for (i = 0; i < cache->size; i++) printf("%d:\t %s", i, cache->name[i]);
+
+}
 
 void cache_free(char **cache, int size) {
 
