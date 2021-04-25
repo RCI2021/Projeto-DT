@@ -33,14 +33,16 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     if (errcode != 0) return -1;
 
     errcode = connect(fd, res->ai_addr, res->ai_addrlen);
-    if (errcode == -1) return -1;
+    if (errcode == -1) {
+        return -1;
+    }
 
     sprintf(buffer, "NEW %d\n", info->id);
     ptr = &buffer[0];
     nbytes = (4 + sizeof(info->id));
 
     nleft = nbytes;
-    while (nleft > 0) {
+    while (nleft > 0) { //TODO use functions
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0) return -1;
         nleft -= nwritten;
@@ -64,7 +66,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     }
 
     if (FD_ISSET(fd, &rfds)) {
-        while (nleft > 0) {
+        while (nleft > 0) { //TODO use functions
             nread = read(fd, ptr, nleft);
             if (nread == -1) return -1;
             else if (nread == 0) break;
@@ -103,7 +105,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
 int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, current_fd, errcode, max_fd, count, buffer_id;
+    int listen_fd, new_fd, current_fd, errcode, max_fd, count, buffer_id, n;
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
@@ -126,14 +128,16 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
 
     FD_SET(0, &rfds);
+    FD_SET(listen_fd, &rfds);
     max_fd = FD_setlist(list, &rfds);
 
     while (strcmp(buffer, "leave\n") != 0) {
 
+
         addrlen = sizeof addr;
         rfds_current = rfds;
 
-        count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL); //TODO fd stdin está a ser apagado?
+        count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
 
         if (count < 1) return -1;//TODO ERROR
 
@@ -144,6 +148,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
                 FD_SET(new_fd, &rfds);
+                list = insertList(list, new_fd);
 
             } else if (FD_ISSET(0, &rfds_current)) {
 
@@ -203,7 +208,6 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
-                        int n; ///
                         if ((n = TCP_rcv(aux->fd, buffer)) != 0) { //Recieve message
                             if (n == -1) return -1;//TODO ERROR
                             buffer[n] = '\0';

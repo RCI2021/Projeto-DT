@@ -16,6 +16,6 @@ enum state_main {
 };
 
 int arg_verify(struct my_info *args, int argc, char **argv); //Argument Verification
-enum state_main command_handle(char *command, struct net_info *info); //Command Switcher
+enum state_main command_handle(char *command, struct my_info *args, struct net_info *info); //Command Switcher
 
 #endif //PROJETO_DT_USER_INTERFACE_H

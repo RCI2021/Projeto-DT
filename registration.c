@@ -51,11 +51,11 @@ int nodeslist(struct my_info *args, struct net_info *info) {
 
     char *message, *buffer;
 
-    if ((message = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1; //Memory Allocation
-    if ((buffer = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1;
+    if ((strcmp(info->ext_IP, args->IP) == 0) && (strcmp(info->ext_TCP, args->TCP) == 0)) {
 
-    if ((strcmp(info->ext_IP, "X") == 0) &&
-        (strcmp(info->ext_TCP, "X") == 0)) { //Getting Extern, if one wasn´t provided by the yser
+        if ((message = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1; //Memory Allocation
+        if ((buffer = (char *) malloc(BUFFERSIZE * sizeof(char))) == NULL) return -1;
+
         sprintf(message, "NODES %d", info->net);    //Get nodes list from Server
         if ((UDP_exch(message, buffer, args)) != 0) {
             free(message); //if Error
@@ -63,10 +63,11 @@ int nodeslist(struct my_info *args, struct net_info *info) {
             return -1;
         }
         sscanf(buffer, "%*s %*d %s %s", info->ext_IP, info->ext_TCP);   //Get neighbour from buffer
-    }
 
-    free(message);
-    free(buffer);
+        free(message);
+        free(buffer);
+
+    }
     return 0;
 
 }

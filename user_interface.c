@@ -68,14 +68,14 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
  * @param info struct where info about the net might be stored
  * @return state to which the state should change
  **********************************************************************************************************************/
-enum state_main command_handle(char *command, struct net_info *info) {
+enum state_main command_handle(char *command, struct my_info *args, struct net_info *info) {
 
     char aux[6];
     short int n;
 
     if ((n = sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP)) == 3) {
-        strcpy(info->ext_IP, "X");
-        strcpy(info->ext_TCP, "X");
+        strcpy(info->ext_IP, args->IP);
+        strcpy(info->ext_TCP, args->TCP);
         return get_nodeslist;
 
     } else if ((n != 5) && (n != 1)) {

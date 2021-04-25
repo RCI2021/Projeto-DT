@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
             case wait:
                 printf("\nInput Command:");
                 fgets(command, CMDSIZE, stdin);
-                state = command_handle(command, &info);
+                state = command_handle(command, &args, &info);
                 break;
 
             case get_nodeslist:
@@ -42,17 +42,33 @@ int main(int argc, char **argv) {
                 break;
 
             case join:
-                if ((ext_fd = TCP_client(&info, list, tree)) <= 0) state = err;
-                if (reg(&args, &info) != 0) state = err;
+                if ((strcmp(info.ext_IP, args.IP) != 0) || (strcmp(info.ext_TCP, args.TCP) != 0)) {
+
+                    if ((ext_fd = TCP_client(&info, list, tree)) <= 0) {
+
+                        state = err; //Not alone, may connect to other
+                        break;
+                    }
+
+                }
+                if (reg(&args, &info) != 0) {
+                    state = err;
+                    break;
+                }
                 state = connected;
 
                 break;
 
             case connected:
                 printf("CONNECTED\n");
-                if (TCP_server(&args, &info, list, tree) != 0) state = err;
-                if (unreg(&args, &info) != 0) state = err;
-                else state = wait;
+                if (TCP_server(&args, &info, list, tree) != 0) {
+                    state = err;
+                    break;
+                }
+                if (unreg(&args, &info) != 0) {
+                    state = err;
+                    break;
+                } else state = wait;
                 break;
             case err:
                 info_free(&args, &info);
