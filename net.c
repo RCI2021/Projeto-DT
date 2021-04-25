@@ -171,31 +171,18 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     sscanf(buffer_name, "%d", &buffer_id);
 
                     if (buffer_id == info->id) {
-                        /*if (search_Item(buffer_name, local) < 0 buffer != NULL) {
+                        if (cache_search(buffer_name, local) > 0) printf("DATA %s", buffer_name);
+                        else printf("NODATA %s", buffer_name);
 
-                            sprintf(buffer, "NODATA %s\n", buffer_name);
-                            write(//todo, buffer, sizeof buffer);
+                    } else {
+                        if (cache_search(buffer_name, cache) > 0) printf("DATA %s", buffer_name);
+                        else {
 
-                            else if(buffer != NULL){
-                                sprintf(buffer, "DATA %s\n", buffer_name);
-                                write(todo, buffer, sizeof buffer);
+                            sprintf(buffer, "INTEREST %s");
+                            TCP_send(buffer, find_socket(buffer_id, tree));
+                            interest_fd = 0;
 
-                            }else if (search_Item(buffer_name, cache) < 0) {
-
-                                //TODO get fd of next knot to send
-                                sprintf(buffer, "%s %s\n", INTEREST, buffer_name);
-                                write(todo, buffer, sizeof buffer);
-
-                            } else {
-
-                                sprintf(buffer, "%s %s\n", D, buffer_name);
-                                write(/TODO, buffer, sizeof buffer);
-                            }
-
-                        }*/} else {
-
-                        if ((current_fd = find_socket(buffer_id, tree)) < 1) return -1;//TODO error
-                        TCP_send(buffer, current_fd);
+                        }
 
                     }
 
@@ -236,9 +223,19 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             TCP_send_all(buffer, list, aux->fd);
 
                         } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST")) {
-                            //TODOinterest;
+                            if (cache_search(buffer_name, local) > 0) {
+                                sprintf(buffer, "DATA %s", buffer_name);
+                                TCP_send(buffer, interest_fd);
+                            } else {
+                                sscanf(buffer, "%*s %d", &buffer_id);
+                                if (current_fd = find_socket(buffer_id, tree) != -1) TCP_send(buffer, current_fd);
+
+                            }
+
                         } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
-                            //TODOd;
+                            sscanf("%*s %s", buffer_name);
+                            cache_add(buffer_name, cache);
+                            TCP_send(buffer, interest_fd);
                         } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
                             //TODOnod;
                         }
