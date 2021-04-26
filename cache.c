@@ -9,18 +9,19 @@
 
 
 
-int cache_init(struct Cache *new, int size) {   //TODO free
+struct Cache *cache_init(int size) {   //TODO free
 
     int i;
+    struct Cache *new;
 
     new = (struct Cache *) malloc(sizeof (struct Cache));
 
     if(new == NULL){
-        return -1;
+        return NULL;
     }
 
     if ((new->name = (char **) malloc(sizeof (char*) * size)) == NULL) {
-        return -1;
+        return NULL;
     }
 
     for (i = 0; i < size; i++) {
@@ -28,7 +29,7 @@ int cache_init(struct Cache *new, int size) {   //TODO free
     }
     new->last_used = -1;
     new->size = size;
-    return i;
+    return new;
 }
 
 int cache_add(char *name, struct Cache *cache) {
@@ -74,9 +75,7 @@ int cache_search(char *name, struct Cache *cache) {
     int i;
 
     for (i = 0; i < cache->size; i++) {
-
         if (strcmp(cache->name[i], name) == 0) return i;
-
     }
     return -1;
 }
@@ -85,7 +84,11 @@ void cache_print(struct Cache *cache) {
 
     int i;
 
-    for (i = 0; i < cache->size; i++) printf("%d:\t %s", i, cache->name[i]);
+    for (i = 0; i < cache->size; i++) {
+        if (cache->name[i][0] == '\000') printf("%d:\t <empty>\n", i);
+        else printf("%d:\t %s\n", i, cache->name[i]);
+    }
+
 
 }
 

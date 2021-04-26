@@ -93,8 +93,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     struct socket_list *aux;
     struct Cache *local = NULL, *cache = NULL;
 
-    if (cache_init(local, LOCALSIZE) != LOCALSIZE) return -1;
-    if (cache_init(cache, CACHESIZE) != CACHESIZE) return -1;
+    if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
+    if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -179,10 +179,12 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     print_Tree(tree);
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
-                    printf("Names stored in Local:\n");
-                    cache_print(local);
-                    printf("Names stored in Cache:\n");
-                    cache_print(cache);
+                    if(cache->size == 0) printf("NO CACHE AVAILABLE!");
+                    else{
+                        printf("Names stored in Cache:\n");
+                        cache_print(cache);
+                    }
+
 
                 }
             } else if (list != NULL) {

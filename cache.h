@@ -14,7 +14,7 @@ struct Cache {
 
 };
 
-int cache_init(struct Cache *new, int size);
+struct Cache *cache_init(int size);
 
 int cache_add(char *name, struct Cache *cache);
 
