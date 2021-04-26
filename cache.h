@@ -5,11 +5,16 @@
 #ifndef PROJETO_DT_CACHE_H
 #define PROJETO_DT_CACHE_H
 
-int cache_init(struct Cache *
+struct Cache {
 
-new,
-int size
-);
+    char **name;
+    //FP somethin
+    int last_used;
+    int size;
+
+};
+
+int cache_init(struct Cache *new, int size);
 
 int cache_add(char *name, struct Cache *cache);
 

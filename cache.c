@@ -3,21 +3,25 @@
 //
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "cache.h"
 #include "definition.h"
 
-struct Cache {
 
-    char **name;
-    //FP somethin
-    int last_used;
-    int size;
 
-};
-
-int cache_init(struct Cache *new, int size) {
+int cache_init(struct Cache *new, int size) {   //TODO free
 
     int i;
+
+    new = (struct Cache *) malloc(sizeof (struct Cache));
+
+    if(new == NULL){
+        return -1;
+    }
+
+    if ((new->name = (char **) malloc(sizeof (char*) * size)) == NULL) {
+        return -1;
+    }
 
     for (i = 0; i < size; i++) {
         if ((new->name[i] = (char *) malloc(BUFFERSIZE)) == NULL) break;
