@@ -25,5 +25,7 @@ struct socket_list *getNextSocket(struct socket_list *node);
 
 void remove_socket(struct socket_list *first, int fd);
 
+void close_list(struct socket_list *list);
+
 
 #endif //PROJETO_DT_LINKED_LIST_H

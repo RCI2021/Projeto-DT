@@ -85,7 +85,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
 int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, current_fd, interest_fd, errcode, max_fd, count, buffer_id, n;
+    int listen_fd, new_fd, current_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
@@ -93,8 +93,6 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     struct socket_list *aux;
     struct Cache *local = NULL, *cache = NULL;
 
-    if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
-    if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -110,6 +108,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
+    if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
@@ -136,6 +136,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 list = insertList(list, new_fd);
                 sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
                 TCP_send(buffer, new_fd);
+                send_tree(tree, new_fd);
 
             } else if (FD_ISSET(0, &rfds_current)) {
 
@@ -145,9 +146,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     sscanf(buffer, "%*s %s", buffer_name);
 
-                    sprintf(buffer_name, "%d", info->id);
+                    sprintf(buffer, "%d.%s", info->id, buffer_name);
 
-                    cache_add(buffer_name, local);
+                    cache_add(buffer, local);
 
                 } else if (strncmp(buffer, "get", 3) == 0) {
 
@@ -179,10 +180,12 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     print_Tree(tree);
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
-                    if(cache->size == 0) printf("NO CACHE AVAILABLE!");
-                    else{
+                    if (cache->size == 0) printf("NO CACHE AVAILABLE!");
+                    else {
                         printf("Names stored in Cache:\n");
                         cache_print(cache);
+                        printf("Names stored in Local:\n");
+                        cache_print(local);
                     }
 
 
@@ -201,23 +204,25 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         }//TODO remove socket bc connection closed
                         buffer[n] = '\0';
 
-                        if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE") == 0) {
+                        if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
-                            insert(buffer_id, aux->fd, tree);
+                            tree = insert(buffer_id, aux->fd, tree);
                             TCP_send_all(buffer, list, aux->fd);
 
-                        } else if (strncmp(buffer, "WITHDRAW", sizeof "WITHDRAW") == 0) {
+                        } else if (strncmp(buffer, "WITHDRAW", 8) == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
                             delete(buffer_id, tree);
                             TCP_send_all(buffer, list, aux->fd);
 
-                        } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST") == 0) {
-                            if (cache_search(buffer_name, local) > 0) {
+                        } else if (strncmp(buffer, "INTEREST", 8) == 0) {
+
+                            sscanf(buffer, "%*s %s", buffer_name);
+                            if (cache_search(buffer_name, local) >= 0) {
 
                                 sprintf(buffer, "DATA %s", buffer_name);
-                                TCP_send(buffer, interest_fd);
+                                TCP_send(buffer, aux->fd);
 
                             } else {
 
@@ -228,7 +233,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                             }
 
-                        } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
+                        } else if (strncmp(buffer, "DATA", 4)) {
 
                             sscanf(buffer, "%*s %s", buffer_name);
 
@@ -240,7 +245,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             } else printf("DATA %s", buffer_name);
 
 
-                        } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
+                        } else if (strncmp(buffer, "NODATA", sizeof 6)) {
 
                             sscanf(buffer, "%*s %s", buffer_name);
 
@@ -253,7 +258,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
             }
         }
     }
-
+    close(listen_fd);
+    close_list(list);
     return 0;
 }
 

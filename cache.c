@@ -8,51 +8,38 @@
 #include "definition.h"
 
 
-
 struct Cache *cache_init(int size) {   //TODO free
 
     int i;
     struct Cache *new;
 
-    new = (struct Cache *) malloc(sizeof (struct Cache));
+    new = (struct Cache *) malloc(sizeof(struct Cache));
 
-    if(new == NULL){
+    if (new == NULL) {
         return NULL;
     }
 
-    if ((new->name = (char **) malloc(sizeof (char*) * size)) == NULL) {
+    if ((new->name = (char **) malloc(sizeof(char *) * size)) == NULL) {
         return NULL;
     }
 
     for (i = 0; i < size; i++) {
         if ((new->name[i] = (char *) malloc(BUFFERSIZE)) == NULL) break;
     }
-    new->last_used = -1;
+    new->last_used = 0;
     new->size = size;
     return new;
 }
 
 int cache_add(char *name, struct Cache *cache) {
 
-    int i;
 
-    for (i = 0; i < cache->size; i++) {
-        if (cache->name[i] == NULL) {
+    strcpy(cache->name[cache->last_used], name);
+    if (cache->last_used == (cache->size - 1)) cache->last_used = 0;
+    else cache->last_used++;
 
-            strcpy(cache->name[i], name);
-            return i;
-        }
-    }
 
-    for (i = 0; i < cache->size; i++) {
-        if (cache->last_used != i) {
-
-            strcpy(cache->name[i], name);
-            break;
-
-        }
-    }
-    return i;
+    return cache->last_used;
 }
 
 int cache_rm(char *name, struct Cache *cache) {
