@@ -47,10 +47,11 @@ int cache_add(char *name, struct Cache *cache) {
         if (cache->last_used != i) {
 
             strcpy(cache->name[i], name);
-            return i;
+            break;
 
         }
     }
+    return i;
 }
 
 int cache_rm(char *name, struct Cache *cache) {
@@ -65,6 +66,7 @@ int cache_rm(char *name, struct Cache *cache) {
             break;
         }
     }
+    return i;
 }
 
 int cache_search(char *name, struct Cache *cache) {

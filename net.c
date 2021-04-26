@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include "net.h"
+#include "registration.h"
 #include "linked_list.h"
 #include "cache.h"
 
@@ -20,8 +21,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     fd_set rfds;
     struct addrinfo hints, *res;
     int fd, errcode;
-    ssize_t nbytes, nleft, nwritten, nread;
-    char *ptr, buffer[BUFFERSIZE];
+    char buffer[BUFFERSIZE];
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) return -1;
@@ -39,19 +39,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     }
 
     sprintf(buffer, "NEW %d\n", info->id);
-    ptr = &buffer[0];
-    nbytes = (4 + sizeof(info->id));
-
-    nleft = nbytes;
-    while (nleft > 0) { //TODO use functions
-        nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) return -1;
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    nbytes = BUFFERSIZE;
-    nleft = nbytes;
-    ptr = buffer;
+    TCP_send(buffer, fd);
 
     FD_ZERO(&rfds);
     FD_SET(0, &rfds);
@@ -67,16 +55,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
     }
 
     if (FD_ISSET(fd, &rfds)) {
-        while (nleft > 0) { //TODO use functions
-            nread = read(fd, ptr, nleft);
-            if (nread == -1) return -1;
-            else if (nread == 0) break;
-            nleft -= nread;
-            ptr += nread;
-            if (buffer[nread - 1] == '\n') break;
-        }
-        nread = nbytes - nleft;
-        buffer[nread] = '\0';
+        TCP_rcv(fd, buffer);
     }
     if (FD_ISSET(0, &rfds)) {
         fgets(buffer, BUFFERSIZE, stdin);
@@ -112,7 +91,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     socklen_t addrlen;
     char *buffer, *buffer_name;
     struct socket_list *aux;
-    struct Cache *local = NULL , *cache = NULL;
+    struct Cache *local = NULL, *cache = NULL;
 
     if (cache_init(local, LOCALSIZE) != LOCALSIZE) return -1;
     if (cache_init(cache, CACHESIZE) != CACHESIZE) return -1;
@@ -153,7 +132,10 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
                 FD_SET(new_fd, &rfds);
+                if (new_fd > max_fd) max_fd = new_fd;
                 list = insertList(list, new_fd);
+                sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
+                TCP_send(buffer, new_fd);
 
             } else if (FD_ISSET(0, &rfds_current)) {
 
@@ -163,7 +145,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     sscanf(buffer, "%*s %s", buffer_name);
 
-                    sprintf(buffer_name, "%d.%s", info->id, buffer_name);
+                    sprintf(buffer_name, "%d", info->id);
 
                     cache_add(buffer_name, local);
 
@@ -203,16 +185,20 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     cache_print(cache);
 
                 }
-            } else if(list != NULL){
-                for (aux = list; aux->next != NULL; aux = aux->next) {
+            } else if (list != NULL) {
+                for (aux = list; aux != NULL; aux = aux->next) {
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
-                        if ((n = TCP_rcv(aux->fd, buffer)) != 0) { //Receive message
-                            if (n == -1) return -1;//TODO ERROR
-                            buffer[n] = '\0';
+                        n = TCP_rcv(aux->fd, buffer); //Receive message
+                        if (n == -1) return -1;//TODO ERROR
+                        if (n == 0) {
+                            printf("Client lost");
+                            return -1;
+                        }//TODO remove socket bc connection closed
+                        buffer[n] = '\0';
 
-                        } else if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE") == 0) {
+                        if (strncmp(buffer, "ADVERTISE", sizeof "ADVERTISE") == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
                             insert(buffer_id, aux->fd, tree);
@@ -226,25 +212,41 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                         } else if (strncmp(buffer, "INTEREST", sizeof "INTEREST") == 0) {
                             if (cache_search(buffer_name, local) > 0) {
+
                                 sprintf(buffer, "DATA %s", buffer_name);
                                 TCP_send(buffer, interest_fd);
+
                             } else {
+
                                 sscanf(buffer, "%*s %d", &buffer_id);
                                 current_fd = find_socket(buffer_id, tree);
+
                                 if (current_fd != -1) TCP_send(buffer, current_fd);
 
                             }
 
-                        } else if (strncmp(buffer, "DATA", sizeof "DATA") == 0) {
-                            sscanf(buffer_name, "%*s %s", buffer);
-                            cache_add(buffer_name, cache);
-                            TCP_send(buffer, interest_fd);
-                        } else if (strncmp(buffer, "NODATA", sizeof "NODATA") == 0) {
-                            //TODO NODATA;
+                        } else if (strncmp(buffer, "DATA", sizeof "DATA")) {
+
+                            sscanf(buffer, "%*s %s", buffer_name);
+
+                            if (interest_fd != 0) {
+
+                                cache_add(buffer_name, cache);
+                                TCP_send(buffer, interest_fd);
+
+                            } else printf("DATA %s", buffer_name);
+
+
+                        } else if (strncmp(buffer, "NODATA", sizeof "NODATA")) {
+
+                            sscanf(buffer, "%*s %s", buffer_name);
+
+                            if (interest_fd != 0) TCP_send(buffer, interest_fd);
+                            else printf("NODATA %s", buffer_name);
+
                         }
                     }
                 }
-
             }
         }
     }
@@ -279,7 +281,7 @@ void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
 int TCP_rcv(int fd, char *buffer) {
 
     char *ptr = buffer;
-    int nread, nleft;
+    int nread, nleft = BUFFERSIZE;
 
     while (nleft > 0) {
         nread = read(fd, ptr, nleft);
