@@ -194,6 +194,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         if (n == -1) return -1;//TODO ERROR
                         if (n == 0) {
                             printf("Client lost");
+                            remove_socket(list, aux->fd);
                             return -1;
                         }//TODO remove socket bc connection closed
                         buffer[n] = '\0';

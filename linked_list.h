@@ -23,5 +23,7 @@ int FD_setlist(struct socket_list *list, fd_set *rfds);
 
 struct socket_list *getNextSocket(struct socket_list *node);
 
+void remove_socket(struct socket_list *first, int fd);
+
 
 #endif //PROJETO_DT_LINKED_LIST_H

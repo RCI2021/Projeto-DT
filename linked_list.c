@@ -63,3 +63,24 @@ int getSocket(struct socket_list *node) {
 struct socket_list *getNextSocket(struct socket_list *node) {
     return ((node == NULL) ? NULL : node->next);
 }
+
+void remove_socket(struct socket_list *first, int fd){
+
+    struct socket_list *aux, *prev;
+
+    aux = first;
+
+    if(aux->fd == fd){
+        first = first->next->next;    ///is it safe?
+        free(aux);
+        return;
+    }
+
+    for(prev = first, aux = first->next;aux != NULL; aux = aux->next, prev = prev->next){
+        if (aux->fd == fd){
+            prev->next = aux->next;
+            free(aux);
+            return;
+        }
+    }
+}
