@@ -7,7 +7,6 @@
 #include <string.h>
 #include "user_interface.h"
 #include "net.h"
-#include "expedition.h"
 
 
 /***********************************************************************************************************************
@@ -116,7 +115,7 @@ void ui_create(char *buffer, struct Cache *local, int id) {
     return;
 }
 
-int ui_get(char *buffer, struct Cache *local, struct Cache *cache) {
+int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tree) {
 
     char buffer_name[BUFFERSIZE];
     int buffer_id;

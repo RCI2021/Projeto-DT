@@ -11,9 +11,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include "net.h"
-#include "registration.h"
 #include "linked_list.h"
 #include "cache.h"
+#include "user_interface.h"
 
 
 int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, struct my_info *my_info) { //RETURN FD
@@ -149,7 +149,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 } else if (strncmp(buffer, "get", 3) == 0) {
 
-                    interest_fd = ui_get(buffer, local, cache);
+                    interest_fd = ui_get(buffer, local, cache, tree);
 
                 } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
@@ -171,7 +171,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     }
 
 
-                } else if (strcmp("leave", buffer) != 0) {
+                } else if (strcmp("leave\n", buffer) != 0) {
                     printf("\nUnknown Command; Available commands are :\n\tcreate <subname>\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n\t");
                 }
             } else if (list != NULL) { //Are there any sockets connected to me?
@@ -195,8 +195,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
-                            send_tree(tree,
-                                      aux->fd); //Advertise tree (only does something if there was a failure before
+                            send_tree(tree, aux->fd); //Advertise tree (only does something if there was a failure before
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -207,7 +206,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         } else if (strncmp(buffer, "WITHDRAW", 8) == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
-                            del_tree(buffer_id, tree);
+                            tree = del_tree(buffer_id, tree);
                             TCP_send_all(buffer, list, aux->fd);
 
                         } else if (strncmp(buffer, "INTEREST", 8) == 0) {
