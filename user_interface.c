@@ -76,6 +76,8 @@ enum state_main command_handle(char *command, struct my_info *args, struct net_i
     if ((n = sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP)) == 3) {
         strcpy(info->ext_IP, args->IP);
         strcpy(info->ext_TCP, args->TCP);
+        strcpy(info->rec_IP, args->IP);
+        strcpy(info->rec_TCP, args->TCP);
         return get_nodeslist;
 
     } else if ((n != 5) && (n != 1)) {

@@ -77,7 +77,8 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, 
 
     send_tree(tree, fd);
     list = insertList(list, fd);
-
+    sprintf(buffer, "ADVERTISE %d", info->id);
+    TCP_send(buffer, fd);
     return fd;
 }
 
@@ -111,14 +112,17 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
     if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
+    addrlen = sizeof addr;
+
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
     max_fd = FD_setlist(list, &rfds);
     if (listen_fd > max_fd) max_fd = listen_fd;
 
+    printf("You are now connected to net %d with id %d\n\n", info->net, info->id);
+
     while (strcmp(buffer, "leave\n") != 0) {
 
-        addrlen = sizeof addr;
         rfds_current = rfds;
 
         count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
@@ -129,35 +133,45 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
             if (FD_ISSET(listen_fd, &rfds_current)) {
 
-                addrlen = sizeof addr;
+                addrlen = sizeof addr; //TODO tem que estar aqui?
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
-                FD_SET(new_fd, &rfds);
-                if (new_fd > max_fd) max_fd = new_fd;
-                list = insertList(list, new_fd);
-                sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
-                TCP_send(buffer, new_fd);
-                send_tree(tree, new_fd);
+                FD_SET(new_fd, &rfds); //Adicionar o novo fd à lista de leitura do select
+                if (new_fd > max_fd) max_fd = new_fd; //Atualizar o max_fd
 
-            } else if (FD_ISSET(0, &rfds_current)) {
+                TCP_rcv(new_fd, buffer); //Recieve NEW message
+                list = insertList(list, new_fd); //Add the new fd to the list
 
-                fgets(buffer, BUFFERSIZE, stdin);
+                sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
+                TCP_send(buffer, new_fd); //Send Extern message
+                send_tree(tree, new_fd); //Advertise the tree (only does something if there was a failure before
 
-                if (strncmp(buffer, "create", 6) == 0) {
+            } else if (FD_ISSET(0, &rfds_current)) { //Does stdin have something for me to read?
 
-                    sscanf(buffer, "%*s %s", buffer_name);
+                fgets(buffer, BUFFERSIZE, stdin); //Get whatever is written in stdin
 
-                    sprintf(buffer, "%d.%s", info->id, buffer_name);
+                if (strncmp(buffer, "create", 6) == 0) { //Is it a create?
 
-                    cache_add(buffer, local);
+                    sscanf(buffer, "%*s %s", buffer_name); //Separate the subname from the command
+
+                    sprintf(buffer, "%d.%s", info->id, buffer_name); //join the id with the subname before saving
+
+
+                    if (cache_search(buffer, local) < 0) { //Do we have a file with the same name already stored?
+                        cache_add(buffer, local); //Add the new name to the cache
+                        printf("Created %s\n\n", buffer); //Confirm the creation to the user
+                    } else
+                        printf("File already exists\n\n"); //If file already exists, do not overwrite, inform the user
 
                 } else if (strncmp(buffer, "get", 3) == 0) {
 
-                    sscanf(buffer, "%*s %s", buffer_name);
-                    sscanf(buffer_name, "%d", &buffer_id);
+                    if ((sscanf(buffer, "%*s %s", buffer_name) != 1) || sscanf(buffer_name, "%d", &buffer_id) != 1) {
 
-                    if (buffer_id == info->id) {
-                        if (cache_search(buffer_name, local) > 0) printf("DATA %s", buffer_name);
-                        else printf("NODATA %s", buffer_name);
+                        printf("Wrong file name");
+                        //TODO Error
+                    } else if (buffer_id == info->id) {
+                        if (cache_search(buffer_name, local) > 0)
+                            printf("DATA %s", buffer_name);   //looks for obj in local
+                        else printf("NODATA %s", buffer_name);      //Not in local
 
                     } else {
                         if (cache_search(buffer_name, cache) > 0) printf("DATA %s", buffer_name);
@@ -174,35 +188,37 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
                     printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
-                           info->rec_TCP);
+                           info->rec_TCP); //Print Extern and Recovery IPs & TCPs
 
                 } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
-                    print_Tree(tree);
+                    print_Tree(tree); //Print the tree in order, which will show as as ordered array of nodes
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
-                    if (cache->size == 0) printf("NO CACHE AVAILABLE!");
+                    if (cache->size == 0) printf("NO CACHE AVAILABLE!"); //Was there a Problem with cache?
                     else {
-                        printf("Names stored in Cache:\n");
+                        printf("Names stored in Cache:\n"); //Print names stored in cache
                         cache_print(cache);
-                        printf("Names stored in Local:\n");
+                        printf("Names stored in Local:\n"); //Print names stored in local database
                         cache_print(local);
                     }
 
 
-                }
-            } else if (list != NULL) {
-                for (aux = list; aux != NULL; aux = aux->next) {
+                } else //Command wasn´t recognised, warn the user
+                    printf("Unknown Command; Available commands are :\n\tcreate <subname>\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n\t");
+
+            } else if (list != NULL) { //Are there other sockets connected to me?
+                for (aux = list; aux != NULL; aux = aux->next) {    //Which socket has something for me to read?
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
                         n = TCP_rcv(aux->fd, buffer); //Receive message
                         if (n == -1) return -1;//TODO ERROR
-                        if (n == 0) {
-                            printf("Client lost");
-                            remove_socket(list, aux->fd);
-                            return -1;  //TODO does this make sense?
-                        }//TODO remove socket bc connection closed
-                        buffer[n] = '\0';
+                        else if (n == 0) { //Read=0 means the client disconnected
+                            printf("Client lost, all nodes connected to socket %d are no longer available", aux->fd);
+                            close(aux->fd); //Close the corresponding socket
+                            remove_socket(list, aux->fd); //Remove the socket from the list
+                            tree = withdraw_tree(tree, aux->fd);  //TODO find all ids and send withdraws with one socket
+                        } else buffer[n] = '\0'; //Complete the message
 
                         if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -221,15 +237,20 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             sscanf(buffer, "%*s %s", buffer_name);
                             if (cache_search(buffer_name, local) >= 0) {
 
-                                sprintf(buffer, "DATA %s", buffer_name);
+                                sprintf(buffer, "DATA %s", buffer_name); //If name was found send back DATA message
                                 TCP_send(buffer, aux->fd);
 
                             } else {
-
+                                //Continues sending the INTEREST message towards the destination
                                 sscanf(buffer, "%*s %d", &buffer_id);
                                 current_fd = find_socket(buffer_id, tree);
-
+                                interest_fd = current_fd; //Save the fd in which the request came for later
                                 if (current_fd != -1) TCP_send(buffer, current_fd);
+                                else {
+                                    sprintf(buffer, "NODATA %s",
+                                            buffer_name); //If it can´t find the destination, send NODATA
+                                    TCP_send(buffer, aux->fd);
+                                }
 
                             }
 
@@ -242,15 +263,15 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                                 cache_add(buffer_name, cache);
                                 TCP_send(buffer, interest_fd);
 
-                            } else printf("DATA %s", buffer_name);
+                            } else printf("DATA %s\n", buffer_name);
 
 
-                        } else if (strncmp(buffer, "NODATA", 6) == 0) {
+                        } else if (strncmp(buffer, "NODATA", sizeof 6) == 0) {
 
                             sscanf(buffer, "%*s %s", buffer_name);
 
                             if (interest_fd != 0) TCP_send(buffer, interest_fd);
-                            else printf("NODATA %s", buffer_name);
+                            else printf("NODATA %s\n", buffer_name);
 
                         }
                     }
@@ -258,6 +279,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
             }
         }
     }
+
     close(listen_fd);
     close_list(list);
     return 0;

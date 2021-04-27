@@ -37,8 +37,6 @@ int cache_add(char *name, struct Cache *cache) {
     strcpy(cache->name[cache->last_used], name);
     if (cache->last_used == (cache->size - 1)) cache->last_used = 0;
     else cache->last_used++;
-
-
     return cache->last_used;
 }
 
