@@ -23,15 +23,13 @@ int height(exp_tree *tree);
 
 exp_tree *merge(exp_tree *a, exp_tree *b);
 
-exp_tree *delete(
-int id, exp_tree
-*tree);
+exp_tree *del_tree(int id, exp_tree *tree);
 
 int find_socket(int id, exp_tree *tree);
 
 void print_Tree(exp_tree * tree);
 
-exp_tree *send_tree(exp_tree * tree, int
-fd);
+exp_tree *send_tree(exp_tree * tree, int fd);
 
+exp_tree *withdraw_tree(exp_tree * tree, int fd);
 #endif //PROJETO_DT_EXPEDITION_H

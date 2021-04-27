@@ -135,35 +135,21 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 addrlen = sizeof addr; //TODO tem que estar aqui?
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
-                FD_SET(new_fd, &rfds); //Adicionar o novo fd à lista de leitura do select
                 if (new_fd > max_fd) max_fd = new_fd; //Atualizar o max_fd
-
-                TCP_rcv(new_fd, buffer); //Recieve NEW message
                 list = insertList(list, new_fd); //Add the new fd to the list
-
-                sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
-                TCP_send(buffer, new_fd); //Send Extern message
-                send_tree(tree, new_fd); //Advertise the tree (only does something if there was a failure before
+                FD_SET(new_fd, &rfds); //Add the new fd to the select reading array
 
             } else if (FD_ISSET(0, &rfds_current)) { //Does stdin have something for me to read?
 
                 fgets(buffer, BUFFERSIZE, stdin); //Get whatever is written in stdin
 
-                if (strncmp(buffer, "create", 6) == 0) ui_create(buffer, info->id, local);
-                else if (strncmp(buffer, "get", 3) == 0) {
-                    if (0 < ui_get(buffer, info->id, local) < local->size) {
-                    } else if (0 < ui_get(buffer,)) {
+                if (strncmp(buffer, "create", 6) == 0) { //Is it a create?
 
+                    ui_create(buffer, local, info->id);
 
-                    } else {
+                } else if (strncmp(buffer, "get", 3) == 0) {
 
-                        sprintf(buffer, "INTEREST %s", buffer_name);
-                        TCP_send(buffer, find_socket(buffer_id, tree));
-                        interest_fd = 0;
-
-                    }
-
-                    }
+                    interest_fd = ui_get(buffer, local, cache);
 
                 } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
@@ -171,7 +157,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                            info->rec_TCP); //Print Extern and Recovery IPs & TCPs
 
                 } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
+
                     print_Tree(tree); //Print the tree in order, which will show as as ordered array of nodes
+
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
                     if (cache->size == 0) printf("NO CACHE AVAILABLE!"); //Was there a Problem with cache?
@@ -183,24 +171,34 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                     }
 
 
-                } else //Command wasn´t recognised, warn the user
-                    printf("Unknown Command; Available commands are :\n\tcreate <subname>\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n\t");
-
-            } else if (list != NULL) { //Are there other sockets connected to me?
+                } else if (strcmp("leave", buffer) != 0) {
+                    printf("\nUnknown Command; Available commands are :\n\tcreate <subname>\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n\t");
+                }
+            } else if (list != NULL) { //Are there any sockets connected to me?
                 for (aux = list; aux != NULL; aux = aux->next) {    //Which socket has something for me to read?
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
+                        FD_CLR(aux->fd, &rfds_current);
                         n = TCP_rcv(aux->fd, buffer); //Receive message
                         if (n == -1) return -1;//TODO ERROR
                         else if (n == 0) { //Read=0 means the client disconnected
+
                             printf("Client lost, all nodes connected to socket %d are no longer available", aux->fd);
                             close(aux->fd); //Close the corresponding socket
                             remove_socket(list, aux->fd); //Remove the socket from the list
                             tree = withdraw_tree(tree, aux->fd);  //TODO find all ids and send withdraws with one socket
+
                         } else buffer[n] = '\0'; //Complete the message
 
-                        if (strncmp(buffer, "ADVERTISE", 9) == 0) {
+                        if (strncmp(buffer, "NEW", 3) == 0) {
+
+                            sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
+                            TCP_send(buffer, aux->fd); //Send Extern message
+                            send_tree(tree,
+                                      aux->fd); //Advertise tree (only does something if there was a failure before
+
+                        } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
                             tree = insert(buffer_id, aux->fd, tree);
@@ -209,7 +207,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         } else if (strncmp(buffer, "WITHDRAW", 8) == 0) {
 
                             sscanf(buffer, "%*s %d", &buffer_id);
-                            delete(buffer_id, tree);
+                            del_tree(buffer_id, tree);
                             TCP_send_all(buffer, list, aux->fd);
 
                         } else if (strncmp(buffer, "INTEREST", 8) == 0) {
@@ -239,11 +237,11 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             sscanf(buffer, "%*s %s", buffer_name);
 
                             if (interest_fd != 0) {
-                                //If we´re recieving a DATA message, it means that an interest message passed through us before
-                                cache_add(buffer_name, cache); //Keep all files coming through us in cache
+
+                                cache_add(buffer_name, cache);
                                 TCP_send(buffer, interest_fd);
 
-                            } else printf("DATA %s\n", buffer_name); //Were we who requested the file?
+                            } else printf("DATA %s\n", buffer_name);
 
 
                         } else if (strncmp(buffer, "NODATA", sizeof 6) == 0) {
@@ -265,11 +263,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     return 0;
 }
 
-/***********************************************************************************************************************
- * Function that handles sending a message to a socket
- * @param buffer Message to be sent
- * @param fd Socket to send the message
- **********************************************************************************************************************/
+
 void TCP_send(char *buffer, int fd) {
 
     char *ptr = buffer;
@@ -283,12 +277,6 @@ void TCP_send(char *buffer, int fd) {
     }
 }
 
-/***********************************************************************************************************************
- * Function to handle difusing a message to all of the network
- * @param buffer message to be sent
- * @param list sockets in the net
- * @param fd socket from which the message came, so that it doesn´t send the message backwards
- **********************************************************************************************************************/
 void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
 
     struct socket_list *aux = list;
@@ -299,12 +287,6 @@ void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
     }
 }
 
-/***********************************************************************************************************************
- * Function to handle reading a message from a file descriptor
- * @param fd socket to read from
- * @param buffer string to which the message should be written
- * @return number of bytes read
- **********************************************************************************************************************/
 int TCP_rcv(int fd, char *buffer) {
 
     char *ptr = buffer;

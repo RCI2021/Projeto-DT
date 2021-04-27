@@ -114,11 +114,11 @@ exp_tree *merge(exp_tree *a, exp_tree *b) {
 }
 
 //deletes node (merge avoids losing rest of tree)
-exp_tree *delete(int id, exp_tree *tree) {
+exp_tree *del_tree(int id, exp_tree *tree) {
     exp_tree *aux = tree;
     if (tree == NULL) return NULL;
-    if (id < tree->id) tree->left = delete(id, tree->left);
-    if (id > tree->id) tree->right = delete(id, tree->right);
+    if (id < tree->id) tree->left = del_tree(id, tree->left);
+    if (id > tree->id) tree->right = del_tree(id, tree->right);
     if (id == tree->id) {
         tree = merge(tree->left, tree->right);
         free(aux);
@@ -168,3 +168,21 @@ exp_tree *send_tree(exp_tree *tree, int fd) {       //TODO fct send socket
     return tree;
 }
 
+exp_tree *withdraw_tree(exp_tree *tree, int fd) {       //TODO fct send socket
+
+    char buffer[BUFFERSIZE];
+
+    if (tree == NULL) return NULL;
+    if (tree->left != NULL) withdraw_tree(tree->left, fd);
+
+    if(tree->fd == fd){
+        sprintf(buffer, "WITHDRAW %d\n", tree->id);
+        TCP_send(buffer, fd);
+        tree = merge(tree->left, tree->right);
+        free(tree);
+    }
+
+    if (tree->right != NULL) send_tree(tree->right, fd);
+
+    return tree;
+}
