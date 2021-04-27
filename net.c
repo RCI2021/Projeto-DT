@@ -16,7 +16,7 @@
 #include "cache.h"
 
 
-int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) { //RETURN FD
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, struct my_info *my_info) { //RETURN FD
 
     fd_set rfds;
     struct addrinfo hints, *res;
@@ -38,7 +38,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree) 
         return -1;
     }
 
-    sprintf(buffer, "NEW %d\n", info->id);
+    sprintf(buffer, "NEW %s %s\n", my_info->IP, my_info->TCP);
     TCP_send(buffer, fd);
 
     FD_ZERO(&rfds);
@@ -200,7 +200,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         if (n == 0) {
                             printf("Client lost");
                             remove_socket(list, aux->fd);
-                            return -1;
+                            return -1;  //TODO does this make sense?
                         }//TODO remove socket bc connection closed
                         buffer[n] = '\0';
 
@@ -233,7 +233,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                             }
 
-                        } else if (strncmp(buffer, "DATA", 4)) {
+                        } else if (strncmp(buffer, "DATA", 4) == 0) {
 
                             sscanf(buffer, "%*s %s", buffer_name);
 
@@ -245,7 +245,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             } else printf("DATA %s", buffer_name);
 
 
-                        } else if (strncmp(buffer, "NODATA", sizeof 6)) {
+                        } else if (strncmp(buffer, "NODATA", 6) == 0) {
 
                             sscanf(buffer, "%*s %s", buffer_name);
 

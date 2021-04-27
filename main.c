@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
             case join:
                 if ((strcmp(info.ext_IP, args.IP) != 0) || (strcmp(info.ext_TCP, args.TCP) != 0)) {
 
-                    if ((ext_fd = TCP_client(&info, list, tree)) <= 0) {
+                    if ((ext_fd = TCP_client(&info, list, tree, &args)) <= 0) {
 
                         state = err; //Not alone, may connect to other
                         break;

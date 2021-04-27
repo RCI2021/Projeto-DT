@@ -8,7 +8,7 @@
 #include "definition.h"
 #include "expedition.h"
 
-int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree);
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, struct my_info *my_info);
 
 void show_topology(struct net_info *info);
 
