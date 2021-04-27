@@ -149,39 +149,19 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 fgets(buffer, BUFFERSIZE, stdin); //Get whatever is written in stdin
 
-                if (strncmp(buffer, "create", 6) == 0) { //Is it a create?
+                if (strncmp(buffer, "create", 6) == 0) ui_create(buffer, info->id, local);
+                else if (strncmp(buffer, "get", 3) == 0) {
+                    if (0 < ui_get(buffer, info->id, local) < local->size) {
+                    } else if (0 < ui_get(buffer,)) {
 
-                    sscanf(buffer, "%*s %s", buffer_name); //Separate the subname from the command
-
-                    sprintf(buffer, "%d.%s", info->id, buffer_name); //join the id with the subname before saving
-
-
-                    if (cache_search(buffer, local) < 0) { //Do we have a file with the same name already stored?
-                        cache_add(buffer, local); //Add the new name to the cache
-                        printf("Created %s\n\n", buffer); //Confirm the creation to the user
-                    } else
-                        printf("File already exists\n\n"); //If file already exists, do not overwrite, inform the user
-
-                } else if (strncmp(buffer, "get", 3) == 0) {
-
-                    if ((sscanf(buffer, "%*s %s", buffer_name) != 1) || sscanf(buffer_name, "%d", &buffer_id) != 1) {
-
-                        printf("Wrong file name");
-                        //TODO Error
-                    } else if (buffer_id == info->id) {
-                        if (cache_search(buffer_name, local) > 0)
-                            printf("DATA %s", buffer_name);   //looks for obj in local
-                        else printf("NODATA %s", buffer_name);      //Not in local
 
                     } else {
-                        if (cache_search(buffer_name, cache) > 0) printf("DATA %s", buffer_name);
-                        else {
 
-                            sprintf(buffer, "INTEREST %s", buffer_name);
-                            TCP_send(buffer, find_socket(buffer_id, tree));
-                            interest_fd = 0;
+                        sprintf(buffer, "INTEREST %s", buffer_name);
+                        TCP_send(buffer, find_socket(buffer_id, tree));
+                        interest_fd = 0;
 
-                        }
+                    }
 
                     }
 
@@ -259,11 +239,11 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             sscanf(buffer, "%*s %s", buffer_name);
 
                             if (interest_fd != 0) {
-
-                                cache_add(buffer_name, cache);
+                                //If we´re recieving a DATA message, it means that an interest message passed through us before
+                                cache_add(buffer_name, cache); //Keep all files coming through us in cache
                                 TCP_send(buffer, interest_fd);
 
-                            } else printf("DATA %s\n", buffer_name);
+                            } else printf("DATA %s\n", buffer_name); //Were we who requested the file?
 
 
                         } else if (strncmp(buffer, "NODATA", sizeof 6) == 0) {
@@ -285,7 +265,11 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     return 0;
 }
 
-
+/***********************************************************************************************************************
+ * Function that handles sending a message to a socket
+ * @param buffer Message to be sent
+ * @param fd Socket to send the message
+ **********************************************************************************************************************/
 void TCP_send(char *buffer, int fd) {
 
     char *ptr = buffer;
@@ -299,6 +283,12 @@ void TCP_send(char *buffer, int fd) {
     }
 }
 
+/***********************************************************************************************************************
+ * Function to handle difusing a message to all of the network
+ * @param buffer message to be sent
+ * @param list sockets in the net
+ * @param fd socket from which the message came, so that it doesn´t send the message backwards
+ **********************************************************************************************************************/
 void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
 
     struct socket_list *aux = list;
@@ -309,6 +299,12 @@ void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
     }
 }
 
+/***********************************************************************************************************************
+ * Function to handle reading a message from a file descriptor
+ * @param fd socket to read from
+ * @param buffer string to which the message should be written
+ * @return number of bytes read
+ **********************************************************************************************************************/
 int TCP_rcv(int fd, char *buffer) {
 
     char *ptr = buffer;

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "user_interface.h"
+#include "cache.h"
 
 /***********************************************************************************************************************
  * Verify that all arguments passed in the command line are valid
@@ -99,3 +100,43 @@ enum state_main command_handle(char *command, struct my_info *args, struct net_i
 
 }
 
+int ui_create(char *buffer, int id, struct Cache *local) {
+
+    char *buffer_name;
+
+    if ((buffer_name = (char *) malloc(BUFFERSIZE))NULL) return -137;
+
+    sscanf(buffer, "%*s %s", buffer_name); //Separate the subname from the command
+
+    sprintf(buffer, "%d.%s", id, buffer_name); //join the id with the subname before saving
+
+
+    if (cache_search(buffer, local) < 0) { //Do we have a file with the same name already stored?
+        cache_add(buffer, local); //Add the new name to the cache
+        printf("Created %s\n\n", buffer); //Confirm the creation to the user
+    } else
+        printf("File already exists\n\n"); //If file already exists, do not overwrite, inform the user
+
+    free(buffer_name);
+    return 0;
+
+}
+
+int ui_get(char *buffer, int id, struct Cache *local, struct Cache *cache) {
+
+    char *buffer_name;
+    int i;
+
+    if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -137;
+    if ((sscanf(buffer, "%*s %s", buffer_name) != 1) {
+        printf("Wrong file name");
+        i = -1;
+    } else {
+        i = cache_search(buffer_name, local);
+        if (0 > i > local->size) {
+            if ((0 > i = cache_search(buffer_name, cache) > local->size)) i = -1;
+        }
+    }
+    free(buffer_name);
+    return i;
+}
