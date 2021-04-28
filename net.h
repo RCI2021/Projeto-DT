@@ -22,4 +22,6 @@ void TCP_send_all(char *buffer, struct socket_list *list, int fd);
 
 void TCP_send(char *buffer, int fd);
 
+int extern_update(struct net_info *info, struct my_info *args, char *buffer);
+
 #endif //PROJETO_DT_NET_H

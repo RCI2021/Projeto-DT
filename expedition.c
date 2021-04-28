@@ -88,7 +88,7 @@ exp_tree *rotate_left(exp_tree *tree) {
     y->left = x;
     x->right = beta;
 
-    return x;
+    return y;
 }
 
 /* checks height of tree */

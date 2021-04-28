@@ -298,21 +298,25 @@ int TCP_rcv(int fd, char *buffer) {
 
     return nread;
 }
-/*
+
 int extern_update(struct net_info *info, struct my_info *args, char *buffer) {
     char aux_IP[IPSIZE], aux_TCP[TCPSIZE];
 
     if (sscanf(buffer, "%*s %s %s", aux_IP, aux_TCP) != 2) {
-        perror("Strange NEW message received: %s", buffer);
+        perror("Strange NEW message received");
         return -1;
     }
 
+
     if (strcmp(args->IP, info->ext_IP) == 0 && strcmp(args->TCP, info->ext_TCP) == 0) {
 
+        strcpy(info->ext_IP, aux_IP);
+        strcpy(info->ext_TCP, aux_TCP);
+        /*if (strcmp(args->IP, info->rec_IP) == 0 && strcmp(args->TCP, info->rec_TCP) == 0) {
 
-        if (strcmp(args->IP, info->rec_IP) == 0 && strcmp(args->TCP, info->rec_TCP) == 0) {
 
-
-        }
+        }*/
     }
-}*/
+
+    return 0;
+}
