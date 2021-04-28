@@ -64,24 +64,38 @@ struct socket_list *getNextSocket(struct socket_list *node) {
     return ((node == NULL) ? NULL : node->next);
 }
 
-void remove_socket(struct socket_list *first, int fd) {
+void remove_socket(struct socket_list **first, int fd) {
 
-    struct socket_list *aux, *prev;
+    struct socket_list *aux, *prev = NULL;
 
-    aux = first;
+    aux = *first;
 
-    if (aux->fd == fd) {
-        first = first->next;    ///is it safe?
-        free(aux);
+    //Checks if socket is in head node
+    if (aux != NULL && aux->fd == fd)
+    {
+        *first = aux->next; // Change head
+        free(aux);            // free old head
         return;
     }
 
-    for (prev = first, aux = first->next; aux != NULL; aux = aux->next, prev = prev->next) {
-        if (aux->fd == fd) {
-            prev->next = aux->next;
-            free(aux);
-            return;
+    // Else Search for the key to be deleted, keep track of the previous node as we, need to change 'prev->next'
+    else
+    {
+        while (aux != NULL && aux->fd != fd)
+        {
+            prev = aux;
+            aux = aux->next;
         }
+
+        // If key was not present in linked list
+        if (aux == NULL)
+            return;
+
+        // Unlink the node from linked list
+        prev->next = aux->next;
+
+        // Free memory
+        free(aux);
     }
 }
 

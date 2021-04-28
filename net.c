@@ -184,7 +184,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             close(aux->fd); //Close the corresponding socket
                             FD_CLR(aux->fd, &rfds);
                             tree = withdraw_tree(tree, aux->fd);
-                            remove_socket(list, aux->fd); //Remove the socket from the list
+                            remove_socket(&list, aux->fd); //Remove the socket from the list
 
                         } else buffer[n] = '\0'; //Complete the message
 
