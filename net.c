@@ -20,7 +20,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, 
 
     fd_set rfds;
     struct addrinfo hints, *res;
-    int fd, errcode;
+    int fd, errcode, buffer_id;
     char buffer[BUFFERSIZE];
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,40 +45,43 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, 
     FD_SET(0, &rfds);
     FD_SET(fd, &rfds);
 
-    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL,
-                     (struct timeval *) NULL); ///ver situação em q n há mais nós
 
-    if (errcode <= 0) {
-        perror("Select error");
-        freeaddrinfo(res);
-        return -1;
-    }
+        errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL,
+                         (struct timeval *) NULL); ///ver situação em q n há mais nós
 
-    if (FD_ISSET(fd, &rfds)) {
-        TCP_rcv(fd, buffer);
-    }
-    if (FD_ISSET(0, &rfds)) {
-        fgets(buffer, BUFFERSIZE, stdin);
-        if (strcmp(buffer, "cancel") != 0) {
-            printf("New Operation Canceled");
+        if (errcode <= 0) {
+            perror("Select error");
+            freeaddrinfo(res);
             return -1;
         }
-    }
 
-    if (strncmp(buffer, "EXTERN", 6) != 0) {
+        if (FD_ISSET(fd, &rfds)) {
+            FD_CLR(fd, &rfds);
+            TCP_rcv(fd, buffer);
+        }
+        if (FD_ISSET(0, &rfds)) {
+            FD_CLR(0, &rfds);
+            fgets(buffer, BUFFERSIZE, stdin);
+            if (strcmp(buffer, "cancel") != 0) {
+                printf("New Operation Canceled");
+                return -1;
+            }
+        }
 
-        printf("Expected Extern, received %s", buffer);
-        freeaddrinfo(res);
-        return -1;
+        if (strncmp(buffer, "EXTERN", 6) == 0) {
 
-    } else sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
+
+            sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
+        } else printf("Expected Extern, Recieved %s", buffer);
+
+    sprintf(buffer, "ADVERTISE %d\n", info->id);
+    TCP_send(buffer, fd);
+    send_tree(tree, fd);
 
     freeaddrinfo(res);
 
-    send_tree(tree, fd);
     list = insertList(list, fd);
-    sprintf(buffer, "ADVERTISE %d", info->id);
-    TCP_send(buffer, fd);
+
     return fd;
 }
 
@@ -147,7 +150,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 } else if (strncmp(buffer, "get", 3) == 0) {
 
-                    interest_fd = ui_get(buffer, local, cache, tree);
+                    ui_get(buffer, local, cache, tree);
 
                 } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
@@ -181,18 +184,24 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         else if (n == 0) { //Read=0 means the client disconnected
 
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
-                            close(aux->fd); //Close the corresponding socket
                             FD_CLR(aux->fd, &rfds);
+                            close(aux->fd); //Close the corresponding socket
                             tree = withdraw_tree(tree, aux->fd);
                             remove_socket(&list, aux->fd); //Remove the socket from the list
-
-                        } else buffer[n] = '\0'; //Complete the message
+                        }
+                        buffer[n] = '\0'; //Complete the message
 
                         if (strncmp(buffer, "NEW", 3) == 0) {
+
                             extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
-                            send_tree(tree, aux->fd); //Advertise tree (only does something if there was a failure)
+                            TCP_rcv(aux->fd, buffer);
+                            sscanf(buffer, "%*s %d", buffer_id);
+                            tree = insert(buffer_id, aux->fd, tree);
+                            sprintf(buffer, "ADVERTISE %d\n", info->id);
+                            TCP_send(buffer, aux->fd);
+                            send_tree(tree, aux->fd); //Advertise tree
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -307,15 +316,11 @@ int extern_update(struct net_info *info, struct my_info *args, char *buffer) {
         return -1;
     }
 
-
     if (strcmp(args->IP, info->ext_IP) == 0 && strcmp(args->TCP, info->ext_TCP) == 0) {
 
         strcpy(info->ext_IP, aux_IP);
         strcpy(info->ext_TCP, aux_TCP);
-        /*if (strcmp(args->IP, info->rec_IP) == 0 && strcmp(args->TCP, info->rec_TCP) == 0) {
 
-
-        }*/
     }
 
     return 0;

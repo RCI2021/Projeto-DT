@@ -15,7 +15,7 @@ exp_tree *insert(int id, int fd, exp_tree *tree) {
     if (tree == NULL) { //tree is empty
         tree = (exp_tree *) malloc(sizeof(exp_tree));
         tree->id = id;
-        tree->fd = id;
+        tree->fd = fd;
         tree->left = tree->right = NULL;
         return tree;
     }
@@ -144,7 +144,7 @@ int find_socket(int id, exp_tree *tree) {
 }
 
 //prints tree in post-fixed
-void print_Tree(exp_tree *tree) {       //TODO fct send socket
+void print_Tree(exp_tree *tree) {
 
     if (tree == NULL) return;
     if (tree->left != NULL) print_Tree(tree->left);
@@ -154,7 +154,7 @@ void print_Tree(exp_tree *tree) {       //TODO fct send socket
     return;
 }
 
-exp_tree *send_tree(exp_tree *tree, int fd) {       //TODO fct send socket
+exp_tree *send_tree(exp_tree *tree, int fd) {
 
     char buffer[BUFFERSIZE];
 
@@ -168,7 +168,7 @@ exp_tree *send_tree(exp_tree *tree, int fd) {       //TODO fct send socket
     return tree;
 }
 
-exp_tree *withdraw_tree(exp_tree *tree, int fd) {       //TODO fct send socket
+exp_tree *withdraw_tree(exp_tree *tree, int fd) {
 
     char buffer[BUFFERSIZE];
 
