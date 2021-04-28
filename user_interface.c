@@ -21,7 +21,6 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
     char aux[128];
 
 
-
     if (argc == 3) {
 
         strcpy(args->IP, argv[1]);
@@ -78,24 +77,25 @@ enum state_main command_handle(char *command, struct my_info *args, struct net_i
     char aux[6];
     short int n;
 
+    strcpy(info->rec_IP, args->IP);
+    strcpy(info->rec_TCP, args->TCP);
+
     if ((n = sscanf(command, "%s %d %d %s %s", aux, &info->net, &info->id, info->ext_IP, info->ext_TCP)) == 3) {
+
         strcpy(info->ext_IP, args->IP);
         strcpy(info->ext_TCP, args->TCP);
-        strcpy(info->rec_IP, args->IP);
-        strcpy(info->rec_TCP, args->TCP);
 
-        if (strcmp(aux, "join") == 0) return get_nodeslist;
-        else return wait;
+    }
 
-    } else if ((n != 5) && (n != 1)) {
+    if ((strcmp(aux, "join") == 0) && ((n == 5) || (n == 3))) { //Case join
 
-        printf("Wrong number of arguments\n");
+        if (n == 5) {
+            return join;
+        } else return get_nodeslist;
+
+    } else if ((strcmp(aux, "exit") == 0) && (n == 1)) {   //Case exit
         return quit;
-    } else if ((strcmp(aux, "join") == 0) && (n == 5)) { //Case join
-        return join;
-    } else if (strcmp(aux, "exit") == 0) {   //Case exit
-        return quit;
-    } else {    //Other commands only work when connected to 0 net
+    } else {    //Other commands only work when connected to a net
         printf("Unknown Command, Available commands are:\n\t\t\t join \n\t\t\t exit\n");
         return wait;
     }

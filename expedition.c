@@ -15,7 +15,7 @@ exp_tree *insert(int id, int fd, exp_tree *tree) {
     if (tree == NULL) { //tree is empty
         tree = (exp_tree *) malloc(sizeof(exp_tree));
         tree->id = id;
-        tree->fd = id;
+        tree->fd = fd;
         tree->left = tree->right = NULL;
         return tree;
     }
