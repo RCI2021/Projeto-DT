@@ -112,8 +112,6 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
     if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
-    addrlen = sizeof addr;
-
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
     max_fd = FD_setlist(list, &rfds);
@@ -133,7 +131,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
             if (FD_ISSET(listen_fd, &rfds_current)) {
 
-                addrlen = sizeof addr; //TODO tem que estar aqui?
+                addrlen = sizeof addr;
                 if ((new_fd = accept(listen_fd, &addr, &addrlen)) == -1) return -1;//TODO ERROR
                 if (new_fd > max_fd) max_fd = new_fd; //Atualizar o max_fd
                 list = insertList(list, new_fd); //Add the new fd to the list
@@ -178,21 +176,20 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
-                        FD_CLR(aux->fd, &rfds_current);
                         n = TCP_rcv(aux->fd, buffer); //Receive message
                         if (n == -1) return -1;//TODO ERROR
                         else if (n == 0) { //Read=0 means the client disconnected
 
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
                             close(aux->fd); //Close the corresponding socket
-                            remove_socket(list, aux->fd); //Remove the socket from the list
                             FD_CLR(aux->fd, &rfds);
                             tree = withdraw_tree(tree, aux->fd);
+                            remove_socket(list, aux->fd); //Remove the socket from the list
 
                         } else buffer[n] = '\0'; //Complete the message
 
                         if (strncmp(buffer, "NEW", 3) == 0) {
-                            //extern_update(info, args, buffer);
+                            extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
                             send_tree(tree, aux->fd); //Advertise tree (only does something if there was a failure)
@@ -266,7 +263,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 void TCP_send(char *buffer, int fd) {
 
     char *ptr = buffer;
-    int nleft, nwritten;
+    ssize_t nleft, nwritten;
     nleft = strlen(buffer);
 
     while (nleft > 0) {
@@ -289,7 +286,7 @@ void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
 int TCP_rcv(int fd, char *buffer) {
 
     char *ptr = buffer;
-    int nread, nleft = BUFFERSIZE;
+    ssize_t nread, nleft = BUFFERSIZE;
 
     while (nleft > 0) {
         nread = read(fd, ptr, nleft);
