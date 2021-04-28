@@ -153,8 +153,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
 
-                    printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP, info->ext_TCP, info->rec_IP,
-                           info->rec_TCP); //Print Extern and Recovery IPs & TCPs
+                    printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP,
+                           info->ext_TCP, info->rec_IP, info->rec_TCP); //Print Extern and Recovery IPs & TCPs
 
                 } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
 
@@ -162,17 +162,16 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
-                    if (cache->size == 0) printf("NO CACHE AVAILABLE!"); //Was there a Problem with cache?
+                    if (cache->size == 0) printf("NO CACHE AVAILABLE!\n"); //Was there a Problem with cache?
                     else {
                         printf("Names stored in Cache:\n"); //Print names stored in cache
                         cache_print(cache);
                         printf("Names stored in Local:\n"); //Print names stored in local database
                         cache_print(local);
                     }
-
-
                 } else if (strcmp("leave\n", buffer) != 0) {
-                    printf("\nUnknown Command; Available commands are :\n\tcreate <subname>\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n\t");
+                    printf("\nUnknown Command; Available commands are :\n\tcreate <subname>"
+                           "\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n");
                 }
             } else if (list != NULL) { //Are there any sockets connected to me?
                 for (aux = list; aux != NULL; aux = aux->next) {    //Which socket has something for me to read?
@@ -184,18 +183,19 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         if (n == -1) return -1;//TODO ERROR
                         else if (n == 0) { //Read=0 means the client disconnected
 
-                            printf("Client lost, all nodes connected to socket %d are no longer available", aux->fd);
+                            printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
                             close(aux->fd); //Close the corresponding socket
                             remove_socket(list, aux->fd); //Remove the socket from the list
-                            tree = withdraw_tree(tree, aux->fd);  //TODO find all ids and send withdraws with one socket
+                            FD_CLR(aux->fd, &rfds);
+                            tree = withdraw_tree(tree, aux->fd);
 
                         } else buffer[n] = '\0'; //Complete the message
 
                         if (strncmp(buffer, "NEW", 3) == 0) {
-
+                            //extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
-                            send_tree(tree, aux->fd); //Advertise tree (only does something if there was a failure before
+                            send_tree(tree, aux->fd); //Advertise tree (only does something if there was a failure)
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -301,3 +301,21 @@ int TCP_rcv(int fd, char *buffer) {
 
     return nread;
 }
+/*
+int extern_update(struct net_info *info, struct my_info *args, char *buffer) {
+    char aux_IP[IPSIZE], aux_TCP[TCPSIZE];
+
+    if (sscanf(buffer, "%*s %s %s", aux_IP, aux_TCP) != 2) {
+        perror("Strange NEW message received: %s", buffer);
+        return -1;
+    }
+
+    if (strcmp(args->IP, info->ext_IP) == 0 && strcmp(args->TCP, info->ext_TCP) == 0) {
+
+
+        if (strcmp(args->IP, info->rec_IP) == 0 && strcmp(args->TCP, info->rec_TCP) == 0) {
+
+
+        }
+    }
+}*/

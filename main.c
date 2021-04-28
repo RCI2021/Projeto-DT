@@ -23,10 +23,15 @@ int main(int argc, char **argv) {
     struct socket_list *list = NULL;
     exp_tree *tree = NULL;
 
-    printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
+    //  printf("%s %s %s %s", argv[1], argv[2], argv[3], argv[4]);
 
     if (info_alloc(&args, &info) != 0) return -1; //Memory allocation
-    if (arg_verify(&args, argc, argv) != 0) return -1;   //Argument Verification
+    if (arg_verify(&args, argc, argv) != 0) {
+        info_free(&args, &info);
+        return -1;   //Argument Verification
+    }
+
+    printf("\n\t\tWelcome to the Distribued Name Network by Duarte Costa & António Vidais\n");
 
     while (state != quit) {
         switch (state) {
@@ -60,7 +65,7 @@ int main(int argc, char **argv) {
                 break;
 
             case connected:
-                printf("CONNECTED\n");
+                // printf("CONNECTED\n");
                 if (TCP_server(&args, &info, list, tree) != 0) {
                     state = err;
                     break;

@@ -20,44 +20,47 @@ int arg_verify(struct my_info *args, int argc, char **argv) {
     unsigned int b1, b2, b3, b4, port;
     char aux[128];
 
-    strcpy(args->IP, argv[1]);
-    strcpy(args->TCP, argv[2]);
+
 
     if (argc == 3) {
 
+        strcpy(args->IP, argv[1]);
+        strcpy(args->TCP, argv[2]);
         strcpy(args->regIP, UDPSERVER);
         strcpy(args->regUDP, UDPPORT);
 
     } else if (argc == 5) { //Is the number of arguments correct?
 
+        strcpy(args->IP, argv[1]);
+        strcpy(args->TCP, argv[2]);
         strcpy(args->regIP, argv[3]);
         strcpy(args->regUDP, argv[4]);
 
     } else {
 
-        printf("Not enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
+        printf("\aNot enough arguments!\n Should be: ndn <ip_addr> <tcp_port> <reg_ip_addr> <reg_udp_port>\n");
         return -1;
 
     }    //Check argv[1] for Node´s IP Address
     if (sscanf(args->IP, "%u.%u.%u.%u%s", &b1, &b2, &b3, &b4, aux) != 4 || b1 > 255 || b2 > 255 || b3 > 255 ||
         b4 > 255) {
-        printf("Error: Bad <ip_addr>\n");   //LAMP
+        printf("\aError: Bad <ip_addr>\n");   //LAMP
         return 1;
     }
     //Check argv[2] for Node´s TCP Port
     if (sscanf(args->TCP, "%u%s", &port, aux) != 1 || port > 65535) {
-        printf("Error: Bad <tcp_port>\n");  //LAMP
+        printf("\aError: Bad <tcp_port>\n");  //LAMP
         return 2;
     }
     //Check argv[3] for IP Address of Node Server
     if (sscanf(args->regIP, "%u.%u.%u.%u%s", &b1, &b2, &b3, &b4, aux) != 4 || b1 > 255 || b2 > 255 || b3 > 255 ||
         b4 > 255) {
-        printf("Error: Bad <reg_ip_addr>\n"); //LAMP
+        printf("\aError: Bad <reg_ip_addr>\n"); //LAMP
         return 3;
     }
     //Check argv[4] for UDP Port of Node Server
     if (sscanf(args->regUDP, "%u%s", &port, aux) != 1 || port > 65535) {
-        printf("Error: Bad <udp_port>\n");  //LAMP
+        printf("\aError: Bad <udp_port>\n");  //LAMP
         return 4;
     }
     return 0;
@@ -80,22 +83,22 @@ enum state_main command_handle(char *command, struct my_info *args, struct net_i
         strcpy(info->ext_TCP, args->TCP);
         strcpy(info->rec_IP, args->IP);
         strcpy(info->rec_TCP, args->TCP);
-        return get_nodeslist;
+
+        if (strcmp(aux, "join") == 0) return get_nodeslist;
+        else return wait;
 
     } else if ((n != 5) && (n != 1)) {
 
-        printf("Wrong number of arguments");
-        return wait;
-
-    } else if (strcmp(aux, "join") == 0) { //Case join TODO command leave
+        printf("Wrong number of arguments\n");
+        return quit;
+    } else if ((strcmp(aux, "join") == 0) && (n == 5)) { //Case join
         return join;
     } else if (strcmp(aux, "exit") == 0) {   //Case exit
         return quit;
     } else {    //Other commands only work when connected to 0 net
-        printf("Unknown Command, Available commands are:\n\t\t\t join \n\t\t\t exit");
+        printf("Unknown Command, Available commands are:\n\t\t\t join \n\t\t\t exit\n");
         return wait;
     }
-
 }
 
 void ui_create(char *buffer, struct Cache *local, int id) {
@@ -108,9 +111,9 @@ void ui_create(char *buffer, struct Cache *local, int id) {
     if (cache_search(buffer, local) < 0) { //Do we have a file with the same name already stored?
 
         cache_add(buffer, local); //Add the new name to the cache
-        printf("Created %s\n\n", buffer); //Confirm the creation to the user
+        printf("Created %s\n", buffer); //Confirm the creation to the user
 
-    } else printf("File already exists\n\n"); //If file already exists, do not overwrite
+    } else printf("File already exists\n"); //If file already exists, do not overwrite
 
     return;
 }
@@ -122,12 +125,12 @@ int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tre
 
     if ((sscanf(buffer, "%*s %s", buffer_name) != 1) || sscanf(buffer_name, "%d", &buffer_id) != 1) {
         //Can´t read id & subname
-        printf("Wrong file name format, format should be 'get id.subname'");
+        printf("Wrong file name format, format should be 'get id.subname'\n");
 
-    } else if (cache_search(buffer_name, local) >= 0) printf("DATA %s", buffer_name); //Fil
-    else if (cache_search(buffer_name, cache) >= 0)printf("DATA %s", buffer_name);
+    } else if (cache_search(buffer_name, local) >= 0) printf("DATA %s\n", buffer_name); //Fil
+    else if (cache_search(buffer_name, cache) >= 0)printf("DATA %s\n", buffer_name);
     else {
-        sprintf(buffer, "INTEREST %s", buffer_name);
+        sprintf(buffer, "INTEREST %s\n", buffer_name);
         TCP_send(buffer, find_socket(buffer_id, tree));
     }
 
