@@ -8,13 +8,13 @@
 #include "definition.h"
 #include "expedition.h"
 
-int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, struct my_info *my_info);
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree, struct my_info *my_info);
 
 void show_topology(struct net_info *info);
 
 int send_adv(int id, int fd);
 
-int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree);
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree **tree);
 
 int TCP_rcv(int fd, char *buffer);
 

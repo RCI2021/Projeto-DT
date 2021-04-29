@@ -16,7 +16,7 @@
 #include "user_interface.h"
 
 
-int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, struct my_info *my_info) { //RETURN FD
+int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree, struct my_info *my_info) { //RETURN FD
 
     fd_set rfds;
     struct addrinfo hints, *res;
@@ -82,11 +82,15 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, 
 
     list = insertList(list, fd);
 
+    TCP_rcv(fd, buffer); //TODO error
+    sscanf(buffer, "%*s %d", &buffer_id);
+    tree = insert(buffer_id, fd, tree);
+
     return fd;
 }
 
 
-int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree *tree) {
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree **tree) {
 
     struct addrinfo hints, *res;
     int listen_fd, new_fd, current_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
@@ -196,13 +200,15 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
-                            if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Adverise ERROR");
+                            if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Advertise ERROR");
                             buffer[n] = '\0';
+                            TCP_send_all(buffer, list, aux->fd);
                             sscanf(buffer, "%*s %d", &buffer_id);
-                            tree = insert(buffer_id, aux->fd, tree);
                             sprintf(buffer, "ADVERTISE %d\n", info->id);
                             TCP_send(buffer, aux->fd);
-                            send_tree(tree, aux->fd); //Advertise tree
+                            send_tree(tree, aux->fd); //Advertise tree to new node
+                            tree = insert(buffer_id, aux->fd, tree);
+
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
