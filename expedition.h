@@ -5,6 +5,8 @@
 #ifndef PROJETO_DT_EXPEDITION_H
 #define PROJETO_DT_EXPEDITION_H
 
+#include "linked_list.h"
+
 typedef struct node exp_tree;
 
 struct node {

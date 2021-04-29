@@ -100,7 +100,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     char *buffer, *buffer_name;
     struct socket_list *aux;
     struct Cache *local = NULL, *cache = NULL;
-
+    exp_tree *tree_swap;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -190,8 +190,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
                             FD_CLR(aux->fd, &rfds);
                             close(aux->fd); //Close the corresponding socket
-                            *tree = withdraw_tree(*tree, aux->fd);
+                            *tree = withdraw_tree(*tree, aux->fd, list);
                             remove_socket(&list, aux->fd); //Remove the socket from the list
+                            break;
                         }
                         buffer[n] = '\0'; //Complete the message
 
@@ -203,12 +204,18 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Advertise ERROR");
                             buffer[n] = '\0';
                             TCP_send_all(buffer, list, aux->fd);
-                            sscanf(buffer, "%*s %d", &buffer_id);
+                            buffer_name = buffer;
+                            while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
+
+                                if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
+                                    tree_swap = insert(buffer_id, aux->fd, *tree);
+                                }
+                                buffer_name++;
+                            }
                             sprintf(buffer, "ADVERTISE %d\n", info->id);
                             TCP_send(buffer, aux->fd);
                             send_tree(*tree, aux->fd); //Advertise tree to new node
-                            *tree = insert(buffer_id, aux->fd, *tree);
-
+                            *tree = tree_swap;
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -269,7 +276,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
             }
         }
     }
-
+    erase_tree(tree);
     close(listen_fd);
     close_list(list);
     return 0;
