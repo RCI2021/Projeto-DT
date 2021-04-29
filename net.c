@@ -46,33 +46,33 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree *tree, 
     FD_SET(fd, &rfds);
 
 
-        errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL,
-                         (struct timeval *) NULL); ///ver situação em q n há mais nós
+    errcode = select(fd + 1, &rfds, (fd_set *) NULL, (fd_set *) NULL,
+                     (struct timeval *) NULL); ///ver situação em q n há mais nós
 
-        if (errcode <= 0) {
-            perror("Select error");
-            freeaddrinfo(res);
+    if (errcode <= 0) {
+        perror("Select error");
+        freeaddrinfo(res);
+        return -1;
+    }
+
+    if (FD_ISSET(fd, &rfds)) {
+        FD_CLR(fd, &rfds);
+        TCP_rcv(fd, buffer);
+    }
+    if (FD_ISSET(0, &rfds)) {
+        FD_CLR(0, &rfds);
+        fgets(buffer, BUFFERSIZE, stdin);
+        if (strcmp(buffer, "cancel") != 0) {
+            printf("New Operation Canceled");
             return -1;
         }
+    }
 
-        if (FD_ISSET(fd, &rfds)) {
-            FD_CLR(fd, &rfds);
-            TCP_rcv(fd, buffer);
-        }
-        if (FD_ISSET(0, &rfds)) {
-            FD_CLR(0, &rfds);
-            fgets(buffer, BUFFERSIZE, stdin);
-            if (strcmp(buffer, "cancel") != 0) {
-                printf("New Operation Canceled");
-                return -1;
-            }
-        }
-
-        if (strncmp(buffer, "EXTERN", 6) == 0) {
+    if (strncmp(buffer, "EXTERN", 6) == 0) {
 
 
-            sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
-        } else printf("Expected Extern, Recieved %s", buffer);
+        sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
+    } else printf("Expected Extern, Recieved %s", buffer);
 
     sprintf(buffer, "ADVERTISE %d\n", info->id);
     TCP_send(buffer, fd);
@@ -196,8 +196,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
-                            TCP_rcv(aux->fd, buffer);
-                            sscanf(buffer, "%*s %d", buffer_id);
+                            if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Adverise ERROR");
+                            buffer[n] = '\0';
+                            sscanf(buffer, "%*s %d", &buffer_id);
                             tree = insert(buffer_id, aux->fd, tree);
                             sprintf(buffer, "ADVERTISE %d\n", info->id);
                             TCP_send(buffer, aux->fd);
