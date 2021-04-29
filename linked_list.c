@@ -8,15 +8,14 @@
 #include "linked_list.h"
 
 struct socket_list *initLinkedList(void) {
-    return NULL;
-}
-
-struct socket_list *insertList(struct socket_list *next, int fd) {
-    struct socket_list *new;
-
     /* Memory allocation */
     new = (struct socket_list *) malloc(sizeof(struct socket_list));
 
+    return new;
+}
+
+struct socket_list *insertList(struct socket_list *next, int fd) {
+    struct socket_list *new=initLinkedList();
     /* Check memory allocation errors */
     if (new == NULL)
         return NULL;
@@ -71,18 +70,15 @@ void remove_socket(struct socket_list **first, int fd) {
     aux = *first;
 
     //Checks if socket is in head node
-    if (aux != NULL && aux->fd == fd)
-    {
+    if (aux != NULL && aux->fd == fd) {
         *first = aux->next; // Change head
         free(aux);            // free old head
         return;
     }
 
-    // Else Search for the key to be deleted, keep track of the previous node as we, need to change 'prev->next'
-    else
-    {
-        while (aux != NULL && aux->fd != fd)
-        {
+        // Else Search for the key to be deleted, keep track of the previous node as we, need to change 'prev->next'
+    else {
+        while (aux != NULL && aux->fd != fd) {
             prev = aux;
             aux = aux->next;
         }
@@ -101,7 +97,9 @@ void remove_socket(struct socket_list **first, int fd) {
 
 void close_list(struct socket_list *list) {
     struct socket_list *aux;
-    for (aux = list; aux != NULL; aux = aux->next) close(aux->fd);
+    for (aux = list; aux != NULL; aux = aux->next) {
+        close(aux->fd);
+    }
     freeList(list);
     return;
 }

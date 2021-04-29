@@ -80,7 +80,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
     freeaddrinfo(res);
 
-    list = insertList(list, fd);
+
 
     TCP_rcv(fd, buffer); //TODO error
     sscanf(buffer, "%*s %d", &buffer_id);
@@ -90,7 +90,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 }
 
 
-int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree **tree) {
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list **list, exp_tree **tree) {
 
     struct addrinfo hints, *res;
     int listen_fd, new_fd, current_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
@@ -163,7 +163,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                 } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
 
-                    print_Tree(*tree); //Print the tree in order, which will show as as ordered array of nodes
+                    if (*tree == NULL) printf("Expedition is empty, this node has no friends\n");
+                    else print_Tree(*tree); //Print the tree in order, which will show as as ordered array of nodes
 
                 } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
 
@@ -276,7 +277,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
             }
         }
     }
-    erase_tree(tree);
+    erase_tree(*tree);
     close(listen_fd);
     close_list(list);
     return 0;
@@ -318,7 +319,7 @@ int TCP_rcv(int fd, char *buffer) {
         ptr += nread;
         if (buffer[nread - 1] == '\n') break;
     }
-
+    buffer[nread] = '\0';
     return nread;
 }
 

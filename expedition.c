@@ -186,12 +186,12 @@ exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
     return aux;
 }
 
-exp_tree *erase_tree(exp_tree *tree) {
+void erase_tree(exp_tree *tree) {
     exp_tree *aux = tree;
-    if (tree == NULL) return NULL;
-    if (tree->left != NULL) tree->left = erase_tree(tree->left);
-    if (tree->right != NULL) tree->right = erase_tree(tree->right);
+    if (tree == NULL) return;
+    if (tree->left != NULL) erase_tree(tree->left);
+    if (tree->right != NULL) erase_tree(tree->right);
     //tree = merge(tree->left, tree->right);
     free(aux);
-    return tree;
+    return;
 }
