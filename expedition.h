@@ -5,6 +5,8 @@
 #ifndef PROJETO_DT_EXPEDITION_H
 #define PROJETO_DT_EXPEDITION_H
 
+#include "linked_list.h"
+
 typedef struct node exp_tree;
 
 struct node {
@@ -31,5 +33,8 @@ void print_Tree(exp_tree * tree);
 
 exp_tree *send_tree(exp_tree * tree, int fd);
 
-exp_tree *withdraw_tree(exp_tree * tree, int fd);
+exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list);
+
+exp_tree *erase_tree(exp_tree *tree);
+
 #endif //PROJETO_DT_EXPEDITION_H

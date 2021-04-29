@@ -20,29 +20,27 @@ exp_tree *insert(int id, int fd, exp_tree *tree) {
         return tree;
     }
 
-    if (id == tree->id){
+    if (id == tree->id) {
         tree->fd = fd;
         return tree; //switch for new fd
     }
 
-    if (id < tree->id){
-    //inserted in left sub-tree
+    if (id < tree->id) {
+        //inserted in left sub-tree
         tree->left = insert(id, fd, tree->left);
         //checks if tree is balanced
         h1 = height(tree->left->left);
         h2 = height(tree->left->right);
         h3 = height(tree->right);
         if (h1 > h3)
-        //rotation to right
+            //rotation to right
             tree = rotate_right(tree);
         if (h2 > h3) {
-        //double rotation to right
+            //double rotation to right
             tree->left = rotate_left(tree->left);
             tree = rotate_right(tree);
         }
-    }
-
-    else {
+    } else {
         //inserted in right sub-tree
         tree->right = insert(id, fd, tree->right);
         h1 = height(tree->right->right);
@@ -168,21 +166,32 @@ exp_tree *send_tree(exp_tree *tree, int fd) {
     return tree;
 }
 
-exp_tree *withdraw_tree(exp_tree *tree, int fd) {
+exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
 
     char buffer[BUFFERSIZE];
+    exp_tree *aux;
 
     if (tree == NULL) return NULL;
-    if (tree->left != NULL) withdraw_tree(tree->left, fd);
+    if (tree->left != NULL) withdraw_tree(tree->left, fd, list);
+    if (tree->right != NULL) withdraw_tree(tree->right, fd, list);
 
-    if(tree->fd == fd){
+    if (tree->fd == fd) {
         sprintf(buffer, "WITHDRAW %d\n", tree->id);
-        TCP_send(buffer, fd);
-        tree = merge(tree->left, tree->right);
+        TCP_send_all(buffer, list, fd);
+        aux = merge(tree->left, tree->right);
         free(tree);
     }
 
-    if (tree->right != NULL) send_tree(tree->right, fd);
 
+    return aux;
+}
+
+exp_tree *erase_tree(exp_tree *tree) {
+    exp_tree *aux = tree;
+    if (tree == NULL) return NULL;
+    if (tree->left != NULL) tree->left = erase_tree(tree->left);
+    if (tree->right != NULL) tree->right = erase_tree(tree->right);
+    //tree = merge(tree->left, tree->right);
+    free(aux);
     return tree;
 }
