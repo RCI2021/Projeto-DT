@@ -20,8 +20,8 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
     fd_set rfds;
     struct addrinfo hints, *res;
-    int fd, errcode /*,buffer_id*/;
-    char buffer[BUFFERSIZE];
+    int fd, errcode, buffer_id;
+    char buffer[BUFFERSIZE], delim[2] = "\n";
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) return -1;
@@ -55,6 +55,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
         return -1;
     }
 
+
     if (FD_ISSET(fd, &rfds)) {
         FD_CLR(fd, &rfds);
         TCP_rcv(fd, buffer);
@@ -73,16 +74,19 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
         sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
     } else printf("Expected Extern, Received %s", buffer);
 
-    sprintf(buffer, "ADVERTISE %d\n", info->id);
-    TCP_send(buffer, fd);
-    send_tree(*tree, fd, info->id);
+                sprintf(buffer, "ADVERTISE %d\n", info->id);
+                TCP_send(buffer, fd);
+                send_tree(*tree, fd, info->id);
+            } else if (strncmp(buffer,"ADVERTISE",9)==0){
+
+                sscanf(buffer,"%*s %d",&buffer_id);
+                *tree= insert(buffer_id,fd,*tree);
+
+            }else printf("Expected Extern or Advertise, Recieved %s",buffer);
+        } while (strtok(NULL, delim) != NULL);
+    } else printf("Expected Extern or Advertise, Recieved %s",buffer);
 
     freeaddrinfo(res);
-    /* TCP_rcv(fd, buffer); //TODO error
-     printf("<received %s>\n", buffer);  //TODO REMOVE
-     sscanf(buffer, "%*s %d", &buffer_id);
-     *tree = insert(buffer_id, fd, *tree);*/
-
     return fd;
 }
 
@@ -94,7 +98,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
-    char buffer[128], command[128], buffer_name[128], delim[2] = "\n";
+    char buffer[128], command[138], buffer_name[128], delim[2] = "\n";
     struct socket_list *aux = NULL;
     struct Cache *local = NULL, *cache = NULL;
 
@@ -240,7 +244,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     sscanf(command, "%*s %s", buffer_name);
                                     if (cache_search(buffer_name, local) >= 0) {
 
-                                        sprintf(command, "DATA %s",
+                                        sprintf(command, "DATA %s\n",
                                                 buffer_name); //If name was found send back DATA message
                                         TCP_send(command, aux->fd);
 
@@ -251,7 +255,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                         interest_fd = current_fd; //Save the fd in which the request came for later
                                         if (current_fd != -1) TCP_send(command, current_fd);
                                         else {
-                                            sprintf(command, "NODATA %s",
+                                            sprintf(command, "NODATA %s\n",
                                                     buffer_name); //If it can´t find the destination, send NODATA
                                             TCP_send(command, aux->fd);
                                         }
@@ -273,7 +277,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     else printf("NODATA %s\n", buffer_name);
 
                                 }
-                            } while ((*command = strtok(NULL, delim)) != NULL);
+                            } while ((strtok(NULL, delim)) != NULL);
                         } else printf("No delimeter found, received: %s", command);
                     }
                 }
