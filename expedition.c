@@ -141,7 +141,7 @@ int find_socket(int id, exp_tree *tree) {
     else return -1;
 }
 
-//prints tree in post-fixed
+//prints tree in-fixed
 void print_Tree(exp_tree *tree) {
 
     if (tree == NULL) return;
@@ -160,6 +160,9 @@ exp_tree *send_tree(exp_tree *tree, int fd) {
     if (tree->left != NULL) send_tree(tree->left, fd);
 
     sprintf(buffer, "ADVERTISE %d\n", tree->id);
+
+    printf("<sending ADVERTISE %d>\n", tree->id);
+
     TCP_send(buffer, fd);
     if (tree->right != NULL) send_tree(tree->right, fd);
 
@@ -169,7 +172,7 @@ exp_tree *send_tree(exp_tree *tree, int fd) {
 exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
 
     char buffer[BUFFERSIZE];
-    exp_tree *aux;
+    exp_tree *aux = NULL;
 
     if (tree == NULL) return NULL;
     if (tree->left != NULL) withdraw_tree(tree->left, fd, list);

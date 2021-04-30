@@ -27,7 +27,6 @@ struct net_info {
     char *ext_TCP;
     char *rec_IP;
     char *rec_TCP;
-    struct socket_list *list;
 };
 
 #endif //PROJETO_DT_DEFINITION_H

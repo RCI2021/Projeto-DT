@@ -58,6 +58,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
     if (FD_ISSET(fd, &rfds)) {
         FD_CLR(fd, &rfds);
         TCP_rcv(fd, buffer);
+        printf("<received -> %s>\n", buffer);  //TODO REMOVE
     }
     if (FD_ISSET(0, &rfds)) {
         FD_CLR(0, &rfds);
@@ -72,7 +73,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
 
         sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
-    } else printf("Expected Extern, Recieved %s", buffer);
+    } else printf("Expected Extern, Received %s", buffer);
 
     sprintf(buffer, "ADVERTISE %d\n", info->id);
     TCP_send(buffer, fd);
@@ -83,6 +84,9 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
 
     TCP_rcv(fd, buffer); //TODO error
+
+    printf("<received %s>\n", buffer);  //TODO REMOVE
+
     sscanf(buffer, "%*s %d", &buffer_id);
     *tree = insert(buffer_id, fd, *tree);
 
@@ -90,7 +94,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 }
 
 
-int TCP_server(struct my_info *args, struct net_info *info, struct socket_list **list, exp_tree **tree) {
+int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree **tree) {
 
     struct addrinfo hints, *res;
     int listen_fd, new_fd, current_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
@@ -98,9 +102,9 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     struct sockaddr addr;
     socklen_t addrlen;
     char *buffer, *buffer_name;
-    struct socket_list *aux;
+    struct socket_list *aux = NULL;
     struct Cache *local = NULL, *cache = NULL;
-    exp_tree *tree_swap;
+    exp_tree *tree_swap = NULL;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -121,7 +125,13 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
-    max_fd = FD_setlist(list, &rfds);
+    //max_fd = FD_setlist(*list, rfds);
+
+    if(list != NULL){
+        max_fd = list->fd;
+        FD_SET(list->fd,&rfds);
+    } else max_fd = 0;
+
     if (listen_fd > max_fd) max_fd = listen_fd;
 
     printf("You are now connected to net %d with id %d\n\n", info->net, info->id);
@@ -133,6 +143,8 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
         count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
 
         if (count < 1) return -1;//TODO ERROR
+
+        printList(list);
 
         for (; count; --count) {
 
@@ -202,17 +214,19 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             extern_update(info, args, buffer);
                             sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
                             TCP_send(buffer, aux->fd); //Send Extern message
+
                             if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Advertise ERROR");
                             buffer[n] = '\0';
                             TCP_send_all(buffer, list, aux->fd);
                             buffer_name = buffer;
-                            while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
+                            /*while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
 
                                 if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
                                     tree_swap = insert(buffer_id, aux->fd, *tree);
                                 }
                                 buffer_name++;
-                            }
+                            }*/
+
                             sprintf(buffer, "ADVERTISE %d\n", info->id);
                             TCP_send(buffer, aux->fd);
                             send_tree(*tree, aux->fd); //Advertise tree to new node
@@ -220,9 +234,17 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
-                            sscanf(buffer, "%*s %d", &buffer_id);
-                            *tree = insert(buffer_id, aux->fd, *tree);
-                            TCP_send_all(buffer, list, aux->fd);
+                            buffer_name = buffer;
+                            while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
+
+                                if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
+                                    *tree = insert(buffer_id, aux->fd, *tree);
+                                    printf("<sending %s\n", buffer);    //TODO REMOVE
+                                    TCP_send_all(buffer, list, aux->fd);
+                                }
+                                buffer_name++;
+                            }
+                            printf("ADVERTISE end\n");
 
                         } else if (strncmp(buffer, "WITHDRAW", 8) == 0) {
 

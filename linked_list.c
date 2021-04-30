@@ -7,15 +7,11 @@
 #include <unistd.h>
 #include "linked_list.h"
 
-struct socket_list *initLinkedList(void) {
-    /* Memory allocation */
-    new = (struct socket_list *) malloc(sizeof(struct socket_list));
-
-    return new;
-}
-
 struct socket_list *insertList(struct socket_list *next, int fd) {
-    struct socket_list *new=initLinkedList();
+
+    struct socket_list *new=NULL;
+
+    new = (struct socket_list*) malloc( sizeof (struct socket_list*));
     /* Check memory allocation errors */
     if (new == NULL)
         return NULL;
@@ -27,14 +23,14 @@ struct socket_list *insertList(struct socket_list *next, int fd) {
     return new;
 }
 
-int FD_setlist(struct socket_list *list, fd_set *rfds) {
+int FD_setlist(struct socket_list *list, fd_set rfds) {
 
     struct socket_list *aux = list;
     int max = 0;
     if (aux != NULL) {
         for (; aux->next != NULL; aux = aux->next) {
 
-            FD_SET(aux->fd, rfds);
+            FD_SET(aux->fd, &rfds);
             if (aux->fd > max) max = aux->fd;
         }
     }
@@ -102,4 +98,14 @@ void close_list(struct socket_list *list) {
     }
     freeList(list);
     return;
+}
+
+void printList(struct socket_list *lpointer){
+    struct socket_list *aux;
+    int i;
+
+    for(aux = lpointer, i = 0; aux != NULL; aux = aux->next, i++){
+        printf("%d (%d)| ", aux->fd, i);
+    }
+    printf("\n");
 }

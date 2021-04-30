@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
                         state = err; //Not alone, may connect to other
                         break;
                     }
+                    printf("Hello %d!\n", ext_fd); //TODO REMOVE
+
                     list = insertList(list, ext_fd);
                 }
                 if (reg(&args, &info) != 0) {
@@ -66,7 +68,7 @@ int main(int argc, char **argv) {
 
             case connected:
                 // printf("CONNECTED\n");
-                if (TCP_server(&args, &info, &list, &tree) != 0) {
+                if (TCP_server(&args, &info, list, &tree) != 0) {
                     state = err;
                     break;
                 }
