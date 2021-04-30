@@ -20,7 +20,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
     fd_set rfds;
     struct addrinfo hints, *res;
-    int fd, errcode, buffer_id;
+    int fd, errcode /*,buffer_id*/;
     char buffer[BUFFERSIZE];
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,8 +70,6 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
     }
 
     if (strncmp(buffer, "EXTERN", 6) == 0) {
-
-
         sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
     } else printf("Expected Extern, Received %s", buffer);
 
@@ -80,11 +78,10 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
     send_tree(*tree, fd, info->id);
 
     freeaddrinfo(res);
-    TCP_rcv(fd, buffer); //TODO error
-    printf("<received %s>\n", buffer);  //TODO REMOVE
-    sscanf(buffer, "%*s %d", &buffer_id);
-    *tree = insert(buffer_id, fd, *tree);
-
+    /* TCP_rcv(fd, buffer); //TODO error
+     printf("<received %s>\n", buffer);  //TODO REMOVE
+     sscanf(buffer, "%*s %d", &buffer_id);
+     *tree = insert(buffer_id, fd, *tree);*/
 
     return fd;
 }
@@ -97,7 +94,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
-    char *buffer, *buffer_name, delim[2] = "\n";
+    char buffer[128], command[128], buffer_name[128], delim[2] = "\n";
     struct socket_list *aux = NULL;
     struct Cache *local = NULL, *cache = NULL;
 
@@ -114,14 +111,13 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     if (listen(listen_fd, 5) == -1) return -1;
     freeaddrinfo(res);
 
-    if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
-    if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+    /* if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
+     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;*/
     if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
     if ((cache = cache_init(CACHESIZE)) == NULL) return -1;
 
     FD_SET(0, &rfds);
     FD_SET(listen_fd, &rfds);
-    //max_fd = FD_setlist(*list, rfds);
 
     if (list != NULL) {
         max_fd = list->fd;
@@ -152,27 +148,27 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
             } else if (FD_ISSET(0, &rfds_current)) { //Does stdin have something for me to read?
 
-                fgets(buffer, BUFFERSIZE, stdin); //Get whatever is written in stdin
+                fgets(command, BUFFERSIZE, stdin); //Get whatever is written in stdin
 
-                if (strncmp(buffer, "create", 6) == 0) { //Is it a create?
+                if (strncmp(command, "create", 6) == 0) { //Is it a create?
 
-                    ui_create(buffer, local, info->id);
+                    ui_create(command, local, info->id);
 
-                } else if (strncmp(buffer, "get", 3) == 0) {
+                } else if (strncmp(command, "get", 3) == 0) {
 
-                    ui_get(buffer, local, cache, *tree);
+                    ui_get(command, local, cache, *tree);
 
-                } else if ((strcmp(buffer, "show topology\n") == 0) || (strcmp(buffer, "st\n") == 0)) {
+                } else if ((strcmp(command, "show topology\n") == 0) || (strcmp(command, "st\n") == 0)) {
 
                     printf("Extern: %s:%s\n Recovery: %s:%s\n", info->ext_IP,
                            info->ext_TCP, info->rec_IP, info->rec_TCP); //Print Extern and Recovery IPs & TCPs
 
-                } else if (strcmp(buffer, "show routing\n") == 0 || strcmp(buffer, "sr\n") == 0) {
+                } else if (strcmp(command, "show routing\n") == 0 || strcmp(command, "sr\n") == 0) {
 
                     if (*tree == NULL) printf("Expedition is empty, this node has no friends\n");
                     else print_Tree(*tree); //Print the tree in order, which will show as as ordered array of nodes
 
-                } else if (strcmp(buffer, "show cache\n") == 0 || strcmp(buffer, "sc\n") == 0) {
+                } else if (strcmp(command, "show cache\n") == 0 || strcmp(command, "sc\n") == 0) {
 
                     if (cache->size == 0) printf("NO CACHE AVAILABLE!\n"); //Was there a Problem with cache?
                     else {
@@ -190,7 +186,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
-                        n = TCP_rcv(aux->fd, buffer); //Receive message
+                        n = TCP_rcv(aux->fd, command); //Receive message
                         if (n == -1) return -1;//TODO ERROR
                         else if (n == 0) { //Read=0 means the client disconnected
 
@@ -208,109 +204,90 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                             }
                             FD_CLR(aux->fd, &rfds);
                             close(aux->fd); //Close the corresponding socket
-                            *tree = withdraw_tree(*tree, aux->fd, list);
+                            *tree = withdraw_tree(*tree, aux->fd,
+                                                  list);//Remove every id whose path contained the socket
                             remove_socket(&list, aux->fd); //Remove the socket from the list
                             break;
                         }
-                        buffer[n] = '\0'; //Complete the message
+                        if ((strtok(command, delim) != NULL)) {
+                            do {
+                                if (strncmp(command, "NEW", 3) == 0) {
 
-                        if (strncmp(buffer, "NEW", 3) == 0) {
+                                    extern_update(info, args, command);
+                                    sprintf(command, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
+                                    TCP_send(command, aux->fd); //Send Extern message
 
-                            extern_update(info, args, buffer);
-                            sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP); //Create Extern message
-                            TCP_send(buffer, aux->fd); //Send Extern message
+                                    sprintf(buffer_name, "ADVERTISE %d\n", info->id);
+                                    TCP_send(buffer_name, aux->fd);
+                                    send_tree(*tree, aux->fd, buffer_id); //Advertise tree to new node
 
-                            if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Advertise ERROR");
-                            buffer[n] = '\0';
-                            TCP_send_all(buffer, list, aux->fd);
+                                } else if (strncmp(command, "ADVERTISE", 9) == 0) {
 
-                            if ((buffer_name = strtok(buffer, delim)) != NULL) {
-                                do {
-                                    if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
-                                        *tree = insert(buffer_id, aux->fd, *tree);
-                                    }
-                                } while (((buffer_name = strtok(NULL, delim)) != NULL));
-                            }
-
-                            sprintf(buffer, "ADVERTISE %d\n", info->id);
-                            TCP_send(buffer, aux->fd);
-                            send_tree(*tree, aux->fd, buffer_id); //Advertise tree to new node
-
-                        } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
-
-                            buffer_name = buffer;
-                            while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
-
-                                if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
+                                    sscanf(command, "%*s %d", &buffer_id);
                                     *tree = insert(buffer_id, aux->fd, *tree);
-                                    printf("<sending %s\n", buffer);    //TODO REMOVE
-                                    TCP_send_all(buffer, list, aux->fd);
+                                    sprintf(buffer_name, "ADVERTISE %d\n", buffer_id);
+                                    TCP_send_all(buffer_name, list, aux->fd);
+
+                                } else if (strncmp(command, "WITHDRAW", 8) == 0) {
+
+                                    sscanf(command, "%*s %d", &buffer_id);
+                                    *tree = del_tree(buffer_id, *tree);
+                                    sprintf(buffer_name, "WITHDRAW %d\n", buffer_id);
+                                    TCP_send_all(buffer_name, list, aux->fd);
+
+                                } else if (strncmp(command, "INTEREST", 8) == 0) {
+
+                                    sscanf(command, "%*s %s", buffer_name);
+                                    if (cache_search(buffer_name, local) >= 0) {
+
+                                        sprintf(command, "DATA %s",
+                                                buffer_name); //If name was found send back DATA message
+                                        TCP_send(command, aux->fd);
+
+                                    } else {
+                                        //Continues sending the INTEREST message towards the destination
+                                        sscanf(command, "%*s %d", &buffer_id);
+                                        current_fd = find_socket(buffer_id, *tree);
+                                        interest_fd = current_fd; //Save the fd in which the request came for later
+                                        if (current_fd != -1) TCP_send(command, current_fd);
+                                        else {
+                                            sprintf(command, "NODATA %s",
+                                                    buffer_name); //If it can´t find the destination, send NODATA
+                                            TCP_send(command, aux->fd);
+                                        }
+
+                                    }
+
+                                } else if (strncmp(command, "DATA", 4) == 0) {
+                                    sscanf(command, "%*s %s", buffer_name);
+                                    if (interest_fd != 0) {
+                                        cache_add(buffer_name, cache);
+                                        TCP_send(command, interest_fd);
+                                    } else printf("DATA %s\n", buffer_name);
+
+                                } else if (strncmp(command, "NODATA", 6) == 0) {
+
+                                    sscanf(command, "%*s %s", buffer_name);
+
+                                    if (interest_fd != 0) TCP_send(command, interest_fd);
+                                    else printf("NODATA %s\n", buffer_name);
+
                                 }
-                                buffer_name++;
-                            }
-                            printf("ADVERTISE end\n");
-
-                        } else if (strncmp(buffer, "WITHDRAW", 8) == 0) {
-
-                            sscanf(buffer, "%*s %d", &buffer_id);
-                            *tree = del_tree(buffer_id, *tree);
-                            TCP_send_all(buffer, list, aux->fd);
-
-                        } else if (strncmp(buffer, "INTEREST", 8) == 0) {
-
-                            sscanf(buffer, "%*s %s", buffer_name);
-                            if (cache_search(buffer_name, local) >= 0) {
-
-                                sprintf(buffer, "DATA %s", buffer_name); //If name was found send back DATA message
-                                TCP_send(buffer, aux->fd);
-
-                            } else {
-                                //Continues sending the INTEREST message towards the destination
-                                sscanf(buffer, "%*s %d", &buffer_id);
-                                current_fd = find_socket(buffer_id, *tree);
-                                interest_fd = current_fd; //Save the fd in which the request came for later
-                                if (current_fd != -1) TCP_send(buffer, current_fd);
-                                else {
-                                    sprintf(buffer, "NODATA %s",
-                                            buffer_name); //If it can´t find the destination, send NODATA
-                                    TCP_send(buffer, aux->fd);
-                                }
-
-                            }
-
-                        } else if (strncmp(buffer, "DATA", 4) == 0) {
-
-                            sscanf(buffer, "%*s %s", buffer_name);
-
-                            if (interest_fd != 0) {
-
-                                cache_add(buffer_name, cache);
-                                TCP_send(buffer, interest_fd);
-
-                            } else printf("DATA %s\n", buffer_name);
-
-
-                        } else if (strncmp(buffer, "NODATA", 6) == 0) {
-
-                            sscanf(buffer, "%*s %s", buffer_name);
-
-                            if (interest_fd != 0) TCP_send(buffer, interest_fd);
-                            else printf("NODATA %s\n", buffer_name);
-
-                        }
+                            } while ((*command = strtok(NULL, delim)) != NULL);
+                        } else printf("No delimeter found, received: %s", command);
                     }
                 }
             }
         }
-    } while (strcmp(buffer, "leave\n") != 0);
+    } while (strcmp(command, "leave\n") != 0);
 
     erase_tree(*tree);
     close(listen_fd);
     close_list(list);
-    free(buffer);
-    free(buffer_name);
-    //cache_free(local, LOCALSIZE);
-    //cache_free(cache, CACHESIZE);
+    // free(buffer);
+    // free(buffer_name);
+//cache_free(local, LOCALSIZE);
+//cache_free(cache, CACHESIZE);
     return 0;
 }
 
@@ -328,13 +305,13 @@ void TCP_send(char *buffer, int fd) {
     }
 }
 
-void TCP_send_all(char *buffer, struct socket_list *list, int fd) {
+void TCP_send_all(char *command, struct socket_list *list, int fd) {
 
     struct socket_list *aux = list;
 
     for (; aux != NULL; aux = aux->next) {
 
-        if (fd != aux->fd) TCP_send(buffer, aux->fd);
+        if (fd != aux->fd) TCP_send(command, aux->fd);
     }
 }
 
