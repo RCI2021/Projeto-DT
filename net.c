@@ -69,10 +69,10 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
             return -1;
         }
     }
-
-    if (strncmp(buffer, "EXTERN", 6) == 0) {
-        sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
-    } else printf("Expected Extern, Received %s", buffer);
+    if (strtok(buffer, delim) != NULL) {
+        do {
+            if (strncmp(buffer, "EXTERN", 6) == 0) {
+                sscanf(buffer, "%*s %s %s", info->rec_IP, info->rec_TCP);
 
                 sprintf(buffer, "ADVERTISE %d\n", info->id);
                 TCP_send(buffer, fd);
