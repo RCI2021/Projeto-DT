@@ -31,7 +31,7 @@ int find_socket(int id, exp_tree *tree);
 
 void print_Tree(exp_tree * tree);
 
-exp_tree *send_tree(exp_tree * tree, int fd);
+exp_tree *send_tree(exp_tree *tree, int fd,int id);
 
 exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list);
 

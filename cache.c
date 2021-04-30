@@ -77,12 +77,13 @@ void cache_print(struct Cache *cache) {
 
 }
 
-void cache_free(char **cache, int size) {
+void cache_free(struct Cache *cache, int size) {
 
     int i;
 
     for (i = 0; i < size; i++) {
-        free(cache[i]);
+        free(cache->name[i]);
     }
+    free(cache->name);
     free(cache);
 }

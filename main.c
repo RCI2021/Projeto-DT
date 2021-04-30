@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
             case connected:
                 // printf("CONNECTED\n");
-                if (TCP_server(&args, &info, list, &tree) != 0) {
+                if (TCP_server(&args, &info,ext_fd, list, &tree) != 0) {
                     state = err;
                     break;
                 }

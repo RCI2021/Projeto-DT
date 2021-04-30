@@ -77,34 +77,29 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 
     sprintf(buffer, "ADVERTISE %d\n", info->id);
     TCP_send(buffer, fd);
-    send_tree(*tree, fd);
+    send_tree(*tree, fd, info->id);
 
     freeaddrinfo(res);
-
-
-
     TCP_rcv(fd, buffer); //TODO error
-
     printf("<received %s>\n", buffer);  //TODO REMOVE
-
     sscanf(buffer, "%*s %d", &buffer_id);
     *tree = insert(buffer_id, fd, *tree);
+
 
     return fd;
 }
 
 
-int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *list, exp_tree **tree) {
+int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct socket_list *list, exp_tree **tree) {
 
     struct addrinfo hints, *res;
     int listen_fd, new_fd, current_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
-    char *buffer, *buffer_name;
+    char *buffer, *buffer_name, delim[2] = "\n";
     struct socket_list *aux = NULL;
     struct Cache *local = NULL, *cache = NULL;
-    exp_tree *tree_swap = NULL;
 
     if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
 
@@ -117,6 +112,7 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
 
     if (bind(listen_fd, res->ai_addr, res->ai_addrlen) == -1) return -1;
     if (listen(listen_fd, 5) == -1) return -1;
+    freeaddrinfo(res);
 
     if ((buffer = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
     if ((buffer_name = (char *) malloc(BUFFERSIZE)) == NULL) return -1;
@@ -127,24 +123,22 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
     FD_SET(listen_fd, &rfds);
     //max_fd = FD_setlist(*list, rfds);
 
-    if(list != NULL){
+    if (list != NULL) {
         max_fd = list->fd;
-        FD_SET(list->fd,&rfds);
+        FD_SET(list->fd, &rfds);
     } else max_fd = 0;
 
     if (listen_fd > max_fd) max_fd = listen_fd;
 
     printf("You are now connected to net %d with id %d\n\n", info->net, info->id);
 
-    while (strcmp(buffer, "leave\n") != 0) {
+    do {
 
         rfds_current = rfds;
 
         count = select(max_fd + 1, &rfds_current, (fd_set *) NULL, (fd_set *) NULL, (struct timeval *) NULL);
 
         if (count < 1) return -1;//TODO ERROR
-
-        printList(list);
 
         for (; count; --count) {
 
@@ -201,6 +195,17 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                         else if (n == 0) { //Read=0 means the client disconnected
 
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
+                            if (aux->fd == ext_fd) {
+                                if ((strcmp(info->rec_IP, args->IP) != 0) || (strcmp(info->rec_TCP, args->TCP) != 0)) {
+                                    printf("Connecting to recovery\n");
+                                    strcpy(info->ext_IP, info->rec_IP);
+                                    strcpy(info->ext_TCP, info->rec_TCP);
+                                    ext_fd = TCP_client(info, list, tree, args);
+                                } else {
+                                    strcpy(info->ext_IP, args->IP);
+                                    strcpy(info->ext_TCP, args->TCP);
+                                }
+                            }
                             FD_CLR(aux->fd, &rfds);
                             close(aux->fd); //Close the corresponding socket
                             *tree = withdraw_tree(*tree, aux->fd, list);
@@ -218,19 +223,18 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                             if ((n = TCP_rcv(aux->fd, buffer)) <= 0) perror("Advertise ERROR");
                             buffer[n] = '\0';
                             TCP_send_all(buffer, list, aux->fd);
-                            buffer_name = buffer;
-                            /*while (((buffer_name = strchr(buffer_name, 'A')) != NULL)) {
 
-                                if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
-                                    tree_swap = insert(buffer_id, aux->fd, *tree);
-                                }
-                                buffer_name++;
-                            }*/
+                            if ((buffer_name = strtok(buffer, delim)) != NULL) {
+                                do {
+                                    if (sscanf(buffer_name, "%*s %d", &buffer_id) == 1) {
+                                        *tree = insert(buffer_id, aux->fd, *tree);
+                                    }
+                                } while (((buffer_name = strtok(NULL, delim)) != NULL));
+                            }
 
                             sprintf(buffer, "ADVERTISE %d\n", info->id);
                             TCP_send(buffer, aux->fd);
-                            send_tree(*tree, aux->fd); //Advertise tree to new node
-                            *tree = tree_swap;
+                            send_tree(*tree, aux->fd, buffer_id); //Advertise tree to new node
 
                         } else if (strncmp(buffer, "ADVERTISE", 9) == 0) {
 
@@ -298,10 +302,15 @@ int TCP_server(struct my_info *args, struct net_info *info, struct socket_list *
                 }
             }
         }
-    }
+    } while (strcmp(buffer, "leave\n") != 0);
+
     erase_tree(*tree);
     close(listen_fd);
     close_list(list);
+    free(buffer);
+    free(buffer_name);
+    //cache_free(local, LOCALSIZE);
+    //cache_free(cache, CACHESIZE);
     return 0;
 }
 

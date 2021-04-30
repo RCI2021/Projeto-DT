@@ -152,19 +152,20 @@ void print_Tree(exp_tree *tree) {
     return;
 }
 
-exp_tree *send_tree(exp_tree *tree, int fd) {
+exp_tree *send_tree(exp_tree *tree, int fd,int id) {
 
     char buffer[BUFFERSIZE];
 
     if (tree == NULL) return NULL;
-    if (tree->left != NULL) send_tree(tree->left, fd);
+    if (tree->left != NULL) send_tree(tree->left, fd,id);
 
-    sprintf(buffer, "ADVERTISE %d\n", tree->id);
+    if (tree->id!=id) {
+        sprintf(buffer, "ADVERTISE %d\n", tree->id);
+        printf("<sending ADVERTISE %d>\n", tree->id);//TODO REMOVE
+        TCP_send(buffer, fd);
+    }
 
-    printf("<sending ADVERTISE %d>\n", tree->id);
-
-    TCP_send(buffer, fd);
-    if (tree->right != NULL) send_tree(tree->right, fd);
+    if (tree->right != NULL) send_tree(tree->right, fd,id);
 
     return tree;
 }

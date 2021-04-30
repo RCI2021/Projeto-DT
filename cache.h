@@ -24,6 +24,6 @@ int cache_search(char *name, struct Cache *cache);
 
 void cache_print(struct Cache *cache);
 
-void cache_free(char **cache, int size);
+void cache_free(struct Cache *cache, int size);
 
 #endif //PROJETO_DT_CACHE_H
