@@ -129,10 +129,10 @@ int find_socket(int id, exp_tree *tree) {
     exp_tree *aux = tree;
     if (aux == NULL) return -1; //no socket found
 
-    while (aux->left != NULL && aux->right != NULL) {
+    while (aux->left != NULL || aux->right != NULL) {
         if (id < aux->id) aux = aux->left;
-        if (id > aux->id) aux = aux->right;
-        if (id == aux->id) {
+        else if (id > aux->id) aux = aux->right;
+        else if (id == aux->id) {
             return aux->fd;
         }
     }
