@@ -118,10 +118,10 @@ exp_tree *del_tree(int id, exp_tree *tree) {
     if (id < tree->id) tree->left = del_tree(id, tree->left);
     if (id > tree->id) tree->right = del_tree(id, tree->right);
     if (id == tree->id) {
-        tree = merge(tree->left, tree->right);
-        free(aux);
+        aux = merge(tree->left, tree->right);
+        free(tree);
     }
-    return tree;
+    return aux;
 }
 
 int find_socket(int id, exp_tree *tree) {
@@ -158,12 +158,12 @@ exp_tree *send_tree(exp_tree *tree, int fd, int id) {
 
     if (tree == NULL) return NULL;
 
-    if (tree->left != NULL) send_tree(tree->left, fd, id);
+    if (tree->left != NULL) tree->left = send_tree(tree->left, fd, id);
     if (tree->id != id) {
         sprintf(buffer, "ADVERTISE %d\n", tree->id);
         TCP_send(buffer, fd);
     }
-    if (tree->right != NULL) send_tree(tree->right, fd, id);
+    if (tree->right != NULL) tree->right = send_tree(tree->right, fd, id);
 
     return tree;
 }
@@ -174,8 +174,8 @@ exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
     exp_tree *aux = NULL;
 
     if (tree == NULL) return NULL;
-    if (tree->left != NULL) withdraw_tree(tree->left, fd, list);
-    if (tree->right != NULL) withdraw_tree(tree->right, fd, list);
+    if (tree->left != NULL)tree->left = withdraw_tree(tree->left, fd, list);
+    if (tree->right != NULL)tree->right = withdraw_tree(tree->right, fd, list);
 
     if (tree->fd == fd) {
         sprintf(buffer, "WITHDRAW %d\n", tree->id);

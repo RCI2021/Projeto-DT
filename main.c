@@ -93,7 +93,6 @@ int main(int argc, char **argv) {
 
 }
 
-
 /***********************************************************************************************************************
  * Function to allocate memory required throughout the program
  * @param args struct containing information about the node

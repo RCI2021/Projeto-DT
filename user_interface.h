@@ -20,6 +20,7 @@ enum state_main {
 int arg_verify(struct my_info *args, int argc, char **argv); //Argument Verification
 enum state_main command_handle(char *command, struct my_info *args, struct net_info *info); //Command Switcher
 void ui_create(char *buffer, struct Cache *local, int id);
+
 int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tree);
 
 #endif //PROJETO_DT_USER_INTERFACE_H

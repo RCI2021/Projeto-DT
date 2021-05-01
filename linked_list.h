@@ -10,6 +10,14 @@ struct socket_list {
     struct socket_list *next;
 };
 
+struct interest_list {
+
+    int fd;
+    char name[128];
+    struct interest_list *next;
+
+};
+
 struct socket_list *insertList(struct socket_list *next, int fd);
 
 void freeList(struct socket_list *first);

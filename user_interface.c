@@ -136,3 +136,10 @@ int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tre
 
     return 0;
 }
+
+char *str_sep(char *original, int delim) {
+    char *new;
+    new = strchr(original, delim);
+    new++;
+    return new;
+}

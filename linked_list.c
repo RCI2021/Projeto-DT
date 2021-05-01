@@ -4,14 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 #include <unistd.h>
 #include "linked_list.h"
 
 struct socket_list *insertList(struct socket_list *next, int fd) {
 
-    struct socket_list *new=NULL;
+    struct socket_list *new = NULL;
 
-    new = (struct socket_list*) malloc( sizeof (struct socket_list*));
+    new = (struct socket_list *) malloc(sizeof(struct socket_list *)); //TODO check pointer
     /* Check memory allocation errors */
     if (new == NULL)
         return NULL;
@@ -100,12 +101,54 @@ void close_list(struct socket_list *list) {
     return;
 }
 
-void printList(struct socket_list *lpointer){
+void printList(struct socket_list *lpointer) {
     struct socket_list *aux;
     int i;
 
-    for(aux = lpointer, i = 0; aux != NULL; aux = aux->next, i++){
+    for (aux = lpointer, i = 0; aux != NULL; aux = aux->next, i++) {
         printf("%d (%d)| ", aux->fd, i);
     }
     printf("\n");
+}
+
+struct interest_list *insertInterest(struct interest_list *next, int fd, char *name) {
+
+    struct interest_list *new = NULL;
+
+    new = (struct interest_list *) malloc(sizeof(struct interest_list));
+    /* Check memory allocation errors */
+    if (new == NULL)
+        return NULL;
+
+    /* Initialize new node */
+    new->fd = fd;
+    new->next = next;
+    strcpy(new->name, name);
+
+    return new;
+}
+
+int interest_search(struct interest_list *list, char *name) {
+
+    struct interest_list *aux;
+
+    for (aux = list; aux != NULL; aux = aux->next) {
+        if (strcmp(name, aux->name) == 0) {
+            return aux->fd;
+        }
+    }
+    return 0;
+}
+
+void interest_rm(struct interest_list *list, char *name) {
+
+    struct interest_list *aux, *del;
+
+    for (aux = list; aux->next != NULL; aux = aux->next) {
+        if (strcmp(name, aux->next->name) == 0) {
+            del = aux->next;
+            aux->next = aux->next->next;
+            free(del);
+        }
+    }
 }
