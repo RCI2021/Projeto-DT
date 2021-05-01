@@ -244,6 +244,8 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     sscanf(ptr, "%*s %s", buffer_name);
                                     sscanf(buffer_name, "%d", &buffer_id);
 
+                                    interest_fd = aux->fd;
+
                                     if (buffer_id == info->id) {
                                         if (cache_search(buffer_name, local) >= 0) {
 
@@ -276,7 +278,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     if (interest_fd != 0) {
                                         cache_add(buffer_name, cache);
                                         TCP_send(command, interest_search(interest_list, buffer_name));
-                                        interest_rm(interest_list, buffer_name);
+                                        interest_rm(&interest_list, buffer_name);
                                     } else printf("DATA %s\n", buffer_name);
 
                                 } else if (strncmp(ptr, "NODATA", 6) == 0) {
@@ -285,7 +287,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
                                     if (interest_fd != 0) TCP_send(command, interest_search(interest_list, buffer_name));
                                     else printf("NODATA %s\n", buffer_name);
-                                    interest_rm(interest_list, buffer_name);
+                                    interest_rm(&interest_list, buffer_name);
                                 }
                             } while ((ptr = strtok(NULL, delim)) != NULL);
                         } else printf("No delimeter found, received: %s", command);

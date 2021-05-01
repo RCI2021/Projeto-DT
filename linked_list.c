@@ -133,18 +133,18 @@ int interest_search(struct interest_list *list, char *name) {
     struct interest_list *aux;
 
     for (aux = list; aux != NULL; aux = aux->next) {
-        if (strcmp(name, aux->name) == 0) {
+        if (strcmp(name, aux->name) == 0) {     //checks if name is correct
             return aux->fd;
         }
     }
     return 0;
 }
 
-void interest_rm(struct interest_list *list, char *name) {
+void interest_rm(struct interest_list **list, char *name) {
 
     struct interest_list *aux, *del;
 
-    for (aux = list; aux->next != NULL; aux = aux->next) {
+    for (aux = *list; aux->next != NULL; aux = aux->next) {
         if (strcmp(name, aux->next->name) == 0) {
             del = aux->next;
             aux->next = aux->next->next;
