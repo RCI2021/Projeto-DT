@@ -159,7 +159,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
                 } else if (strncmp(command, "get", 3) == 0) {
 
-                    ui_get(command, local, cache, *tree);
+                    ui_get(command, local, cache, *tree);   //TODO problem
 
                 } else if ((strcmp(command, "show topology\n") == 0) || (strcmp(command, "st\n") == 0)) {
 

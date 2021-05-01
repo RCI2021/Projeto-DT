@@ -131,6 +131,7 @@ int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tre
     else if (cache_search(buffer_name, cache) >= 0)printf("DATA %s\n", buffer_name);
     else {
         sprintf(buffer, "INTEREST %s\n", buffer_name);
+        if(find_socket(buffer_id, tree) == -1) printf("Node not found!\n");
         TCP_send(buffer, find_socket(buffer_id, tree));
     }
 

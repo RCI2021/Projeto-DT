@@ -35,4 +35,12 @@ void close_list(struct socket_list *list);
 
 void printList(struct socket_list *lpointer);
 
+struct interest_list *insertInterest(struct interest_list *next, int fd, char *name);
+
+int interest_search(struct interest_list *list, char *name);
+
+void interest_rm(struct interest_list *list, char *name);
+
+
+
 #endif //PROJETO_DT_LINKED_LIST_H
