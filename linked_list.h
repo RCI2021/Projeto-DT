@@ -41,6 +41,4 @@ int interest_search(struct interest_list *list, char *name);
 
 void interest_rm(struct interest_list **list, char *name);
 
-
-
 #endif //PROJETO_DT_LINKED_LIST_H

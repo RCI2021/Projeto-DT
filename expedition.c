@@ -171,7 +171,7 @@ exp_tree *send_tree(exp_tree *tree, int fd, int id) {
 exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
 
     char buffer[BUFFERSIZE];
-    exp_tree *aux = NULL;
+    exp_tree *aux = tree;
 
     if (tree == NULL) return NULL;
     if (tree->left != NULL)tree->left = withdraw_tree(tree->left, fd, list);
@@ -180,12 +180,10 @@ exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list) {
     if (tree->fd == fd) {
         sprintf(buffer, "WITHDRAW %d\n", tree->id);
         TCP_send_all(buffer, list, fd);
-        aux = merge(tree->left, tree->right);
-        free(tree);
+        tree = merge(tree->left, tree->right);
+        free(aux);
     }
-
-
-    return aux;
+    return tree;
 }
 
 void erase_tree(exp_tree *tree) {

@@ -91,7 +91,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
 int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct socket_list *list, exp_tree **tree) {
 
     struct addrinfo hints, *res;
-    int listen_fd, new_fd, interest_fd = 0, errcode, max_fd, count, buffer_id, n;
+    int listen_fd, new_fd, errcode, max_fd, count, buffer_id, n;
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
@@ -244,7 +244,6 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     sscanf(ptr, "%*s %s", buffer_name);
                                     sscanf(buffer_name, "%d", &buffer_id);
 
-                                    interest_fd = aux->fd;
 
                                     if (buffer_id == info->id) {
                                         if (cache_search(buffer_name, local) >= 0) {
@@ -271,22 +270,20 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                             interest_list = insertInterest(interest_list, aux->fd, buffer_name);
                                         }
                                     }
-
-
                                 } else if (strncmp(ptr, "DATA", 4) == 0) {
                                     sscanf(command, "%*s %s", buffer_name);
-                                    if (interest_fd != 0) {
-                                        cache_add(buffer_name, cache);
-                                        TCP_send(command, interest_search(interest_list, buffer_name));
-                                        interest_rm(&interest_list, buffer_name);
-                                    } else printf("DATA %s\n", buffer_name);
+                                    cache_add(buffer_name, cache);
+                                    if ((buffer_id = interest_search(interest_list, buffer_name)) > 0) {
+                                        TCP_send(command, buffer_id);
+                                    } else printf("DATA %s", buffer_name);
+                                    interest_rm(&interest_list, buffer_name);
 
                                 } else if (strncmp(ptr, "NODATA", 6) == 0) {
 
                                     sscanf(command, "%*s %s", buffer_name);
-
-                                    if (interest_fd != 0) TCP_send(command, interest_search(interest_list, buffer_name));
-                                    else printf("NODATA %s\n", buffer_name);
+                                    if ((buffer_id = interest_search(interest_list, buffer_name)) > 0) {
+                                        TCP_send(command, interest_search(interest_list, buffer_name));
+                                    } else printf("NODATA %s\n", buffer_name);
                                     interest_rm(&interest_list, buffer_name);
                                 }
                             } while ((ptr = strtok(NULL, delim)) != NULL);
