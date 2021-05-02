@@ -25,6 +25,7 @@ struct Cache *cache_init(int size) {   //TODO free
 
     for (i = 0; i < size; i++) {
         if ((new->name[i] = (char *) malloc(BUFFERSIZE)) == NULL) break;
+        new->name[i][0] = '\0';
     }
     new->last_used = 0;
     new->size = size;

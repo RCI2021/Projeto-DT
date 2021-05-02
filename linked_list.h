@@ -29,9 +29,9 @@ int FD_setlist(struct socket_list *list, fd_set rfds);
 
 struct socket_list *getNextSocket(struct socket_list *node);
 
-void remove_socket(struct socket_list **first, int fd);
+struct socket_list *remove_socket(struct socket_list *first, int fd);
 
-void close_list(struct socket_list **list);
+void close_list(struct socket_list *list);
 
 void printList(struct socket_list *lpointer);
 

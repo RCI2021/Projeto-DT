@@ -49,7 +49,7 @@ int reg(struct my_info *args, struct net_info *info) {
 int nodeslist(struct my_info *args, struct net_info *info) {
 
 
-    char *message, *buffer;
+    char *message, *ptr, *buffer;
 
     if ((strcmp(info->ext_IP, args->IP) == 0) && (strcmp(info->ext_TCP, args->TCP) == 0)) {
 
@@ -62,14 +62,20 @@ int nodeslist(struct my_info *args, struct net_info *info) {
             free(buffer);
             return -1;
         }
-        sscanf(buffer, "%*s %*d %s %s", info->ext_IP, info->ext_TCP);   //Get neighbour from buffer
+        buffer[strlen(buffer) - 1] = '\0';
+
+        if (((ptr = strrchr(buffer, (int) '\n')) != NULL) &&
+            (sscanf(ptr, "\n%s %s\n", info->ext_IP, info->ext_TCP) != 2)) {
+            free(message);
+            free(buffer);
+            return -1;
+        }
 
         free(message);
         free(buffer);
-
     }
-    return 0;
 
+    return 0;
 }
 
 int unreg(struct my_info *args, struct net_info *info) {
@@ -156,7 +162,7 @@ int UDP_exch(char *message, char *buffer, struct my_info *args) {
     } else if (FD_ISSET(0, &rfds)) { //User interrupts process, or calls another command
 
         fgets(buffer, BUFFERSIZE, stdin);
-        buffer[strcspn(buffer, "\n")] = '\0';
+        buffer[n] = '\0';
     }
 
     close(serverfd);

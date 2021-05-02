@@ -138,8 +138,10 @@ ui_get(char *buffer, struct Cache **local, struct Cache **cache, struct interest
             else {
                 sprintf(buffer, "INTEREST %s\n", buffer_name);
                 if ((fd = find_socket(buffer_id, tree)) == -1) printf("Node not found!\n");
-                TCP_send(buffer, fd);
-                interestList = insertInterest(interestList, fd, buffer_name);
+                else {
+                    TCP_send(buffer, fd);
+                    interestList = insertInterest(interestList, fd, buffer_name);
+                }
             }
         }
     }

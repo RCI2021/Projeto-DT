@@ -12,7 +12,12 @@
 //Function Definitions
 int info_alloc(struct my_info *args, struct net_info *info); //Memory Allocation
 void info_free(struct my_info *args, struct net_info *info); //Memory "Deallocation"
-
+/***********************************************************************************************************************
+ *
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char **argv) {
 
     struct my_info args;    //Info about myself
@@ -83,6 +88,7 @@ int main(int argc, char **argv) {
                     state = err;
                     break;
                 }
+                freeList(&list);
                 if (unreg(&args, &info) != 0) {
                     state = err;
                     break;

@@ -62,17 +62,17 @@ struct socket_list *getNextSocket(struct socket_list *node) {
     return ((node == NULL) ? NULL : node->next);
 }
 
-void remove_socket(struct socket_list **first, int fd) {
+struct socket_list *remove_socket(struct socket_list *first, int fd) {
 
     struct socket_list *aux, *prev = NULL;
 
-    aux = *first;
+    aux = first;
 
     //Checks if socket is in head node
     if (aux != NULL && aux->fd == fd) {
-        *first = aux->next; // Change head
+        first = aux->next; // Change head
         free(aux);            // free old head
-        return;
+        return first;
     }
 
         // Else Search for the key to be deleted, keep track of the previous node as we, need to change 'prev->next'
@@ -84,24 +84,22 @@ void remove_socket(struct socket_list **first, int fd) {
 
         // If key was not present in linked list
         if (aux == NULL)
-            return;
+            return first;
 
         // Unlink the node from linked list
         prev->next = aux->next;
 
         // Free memory
         free(aux);
+        return first;
     }
 }
 
-void close_list(struct socket_list **list) {
+void close_list(struct socket_list *list) {
     struct socket_list *aux;
-    for (aux = *list; aux != NULL; aux = aux->next) {
+    for (aux = list; aux != NULL; aux = aux->next) {
         close(aux->fd);
     }
-    freeList(list);
-    list = NULL;
-    return;
 }
 
 void printList(struct socket_list *lpointer) {

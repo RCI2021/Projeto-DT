@@ -9,7 +9,7 @@
 #define UDPPORT "59000"
 #define IPSIZE 100
 #define TCPSIZE 100
-#define BUFFERSIZE 128
+#define BUFFERSIZE 256
 #define LOCALSIZE 10
 #define CACHESIZE 2
 
