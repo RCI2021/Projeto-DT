@@ -20,7 +20,6 @@ struct interest_list {
 
 struct socket_list *insertList(struct socket_list *next, int fd);
 
-void freeList(struct socket_list **first);
 
 int getSocket(struct socket_list *node);
 
@@ -31,7 +30,7 @@ struct socket_list *getNextSocket(struct socket_list *node);
 
 void remove_socket(struct socket_list **first, int fd);
 
-void close_list(struct socket_list **list);
+struct socket_list *close_list(struct socket_list *list);
 
 void printList(struct socket_list *lpointer);
 

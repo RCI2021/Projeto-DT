@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
                     state = err;
                     break;
                 }
+                list = close_list(list);
                 if (unreg(&args, &info) != 0) {
                     state = err;
                     break;

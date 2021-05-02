@@ -162,7 +162,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
             perror("Select Error");
             erase_tree(*tree);
             close(listen_fd);
-            close_list(&list);
+            close_list(list);
             cache_free(local, LOCALSIZE);
             cache_free(cache, CACHESIZE);
         }
@@ -222,7 +222,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                             perror("Error Reading from Socket");
                             erase_tree(*tree);
                             close(listen_fd);
-                            close_list(&list);
+                            close_list(list);
                             freeaddrinfo(res);
                             cache_free(local, LOCALSIZE);
                             cache_free(cache, CACHESIZE);
@@ -372,7 +372,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
     *tree = erase_tree(*tree);
     close(listen_fd);
-    close_list(&list);
+    //close_list(list);
     cache_free(local, LOCALSIZE);
     cache_free(cache, CACHESIZE);
     return 0;

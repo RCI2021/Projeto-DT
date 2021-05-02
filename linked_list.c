@@ -39,18 +39,6 @@ int FD_setlist(struct socket_list *list, fd_set rfds) {
 
 }
 
-void freeList(struct socket_list **first) {
-    struct socket_list *aux, *next;
-
-    if (*first != NULL) {
-        /* Cycle from the first to the last element           */
-        for (aux = *first; aux != NULL; aux = next) {
-            next = aux->next;           /* Keep track of the next node */
-            free(aux);                  /* Free current node    */
-        }
-    }
-}
-
 int getSocket(struct socket_list *node) {
     if (node == NULL)  /* Check that node is not empty */
         return -1;
@@ -94,15 +82,17 @@ void remove_socket(struct socket_list **first, int fd) {
     }
 }
 
-void close_list(struct socket_list **list) {
-    struct socket_list *aux;
-    for (aux = *list; aux != NULL; aux = aux->next) {
+struct socket_list *close_list(struct socket_list *list) {
+    struct socket_list *aux, *next = list;
+
+    for (aux = list; next != NULL; aux = next) {
         close(aux->fd);
+        next = aux->next;
+        free(aux);
     }
-    freeList(list);
-    list = NULL;
-    return;
+    return NULL;
 }
+
 
 void printList(struct socket_list *lpointer) {
     struct socket_list *aux;
