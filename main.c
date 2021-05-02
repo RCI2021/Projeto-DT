@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     struct my_info args;    //Info about myself
     struct net_info info;   //Info about the net I´m in
     char command[CMDSIZE];  //Command Buffer
-    int ext_fd;
+    int ext_fd=0;
     enum state_main state = wait;   //State switch
     struct socket_list *list = NULL;
     exp_tree *tree = NULL;
@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
                         state = err; //Not alone, may connect to other
                         break;
                     }
-                    printf("Hello %d!\n", ext_fd); //TODO REMOVE
 
                     list = insertList(list, ext_fd);
                 }

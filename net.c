@@ -31,10 +31,16 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
     hints.ai_socktype = SOCK_STREAM;
 
     errcode = getaddrinfo(info->ext_IP, info->ext_TCP, &hints, &res);
-    if (errcode != 0) return -1;
-
+    if (errcode != 0) {
+        perror("Error Getting Addr info of extern node");
+        freeaddrinfo(res);
+        return -1;
+    }
     errcode = connect(fd, res->ai_addr, res->ai_addrlen);
     if (errcode == -1) {
+        perror("Error connecting to extern node");
+        printf("\tDid you RST your network?");
+        freeaddrinfo(res);
         return -1;
     }
 
@@ -57,6 +63,7 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
         fgets(buffer, BUFFERSIZE, stdin);
         if (strcmp(buffer, "cancel") != 0) {
             printf("Client Operation Canceled");
+            freeaddrinfo(res);
             return -1;
         }
     }
@@ -95,7 +102,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
-    char buffer[138], command[138], *ptr, buffer_name[128], delim[2] = "\n";
+    char buffer[138] = "\0", command[138] = "\0", *ptr, buffer_name[128] = "\0", delim[2] = "\n";
     struct socket_list *aux = NULL;
     struct interest_list *interest_list = NULL;
     struct Cache *local = NULL, *cache = NULL;
@@ -107,9 +114,21 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if ((errcode = getaddrinfo(NULL, args->TCP, &hints, &res)) == -1) return -1; //Creating Server
-    if (bind(listen_fd, res->ai_addr, res->ai_addrlen) == -1) return -1;
-    if (listen(listen_fd, 5) == -1) return -1;
+    if ((errcode = getaddrinfo(NULL, args->TCP, &hints, &res)) == -1) {
+        perror("Error Getting Adress info for Server");
+        freeaddrinfo(res);
+        return -1;
+    } //Creating Server
+    if (bind(listen_fd, res->ai_addr, res->ai_addrlen) == -1) {
+        perror("Error Binding socket");
+        freeaddrinfo(res);
+        return -1;
+    }
+    if (listen(listen_fd, 5) == -1) {
+        perror("Error setting the socket to listen for connections");
+        freeaddrinfo(res);
+        return -1;
+    }
     freeaddrinfo(res);
 
     if ((local = cache_init(LOCALSIZE)) == NULL) return -1;
@@ -159,7 +178,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
                 } else if (strncmp(command, "get", 3) == 0) {
 
-                    ui_get(command, local, cache, *tree);   //TODO problem
+                    interest_list = ui_get(command, &local, &cache, interest_list, *tree, info->id);   //TODO problem
 
                 } else if ((strcmp(command, "show topology\n") == 0) || (strcmp(command, "st\n") == 0)) {
 
@@ -183,15 +202,25 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                 } else if (strcmp("leave\n", command) != 0) {
                     printf("\nUnknown Command; Available commands are :\n\tcreate <subname>"
                            "\n\tget <name>\n\tshow topology\n\tshow routing\n\tshow cache\n");
-                }
+                } else break;
             } else if (list != NULL) { //Are there any sockets connected to me?
                 for (aux = list; aux != NULL; aux = aux->next) {    //Which socket has something for me to read?
 
                     if (FD_ISSET(aux->fd, &rfds_current)) {
 
                         n = TCP_rcv(aux->fd, command); //Receive message
-                        if (n == -1) return -1;//TODO ERROR
-                        else if (n == 0) { //Read=0 means the client disconnected
+                        if (n == -1) {
+                            perror("Error Reading from Socket");
+                            erase_tree(*tree);
+                            close(listen_fd);
+                            close_list(list);
+                            freeaddrinfo(res);
+                            cache_free(local, LOCALSIZE);
+                            cache_free(cache, CACHESIZE);
+                            return -1;
+
+
+                        } else if (n == 0) { //Read=0 means the client disconnected
 
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
                             if (aux->fd == ext_fd) {
@@ -204,6 +233,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                 } else {
                                     strcpy(info->ext_IP, args->IP);
                                     strcpy(info->ext_TCP, args->TCP);
+                                    ext_fd = 0;
                                 }
                             }
                             FD_CLR(aux->fd, &rfds);
@@ -223,13 +253,14 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     sprintf(buffer, "ADVERTISE %d\n", info->id);
                                     TCP_send(buffer, aux->fd);
                                     *tree = send_tree(*tree, aux->fd, info->id); //Advertise tree to new node
-
+                                    if (ext_fd == 0) ext_fd = aux->fd;
                                 } else if (strncmp(ptr, "ADVERTISE", 9) == 0) {
 
                                     sscanf(ptr, "%*s %d", &buffer_id);
                                     if (buffer_id != info->id) {
                                         *tree = insert(buffer_id, aux->fd, *tree);
-                                    }
+                                    } else printf("Received ADVERTISE with same id, did you add 2 nodes with same id?");
+
                                     sprintf(buffer, "ADVERTISE %d\n", buffer_id);
                                     TCP_send_all(buffer, list, aux->fd);
 
@@ -243,7 +274,6 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                 } else if (strncmp(ptr, "INTEREST", 8) == 0) {
                                     sscanf(ptr, "%*s %s", buffer_name);
                                     sscanf(buffer_name, "%d", &buffer_id);
-
 
                                     if (buffer_id == info->id) {
                                         if (cache_search(buffer_name, local) >= 0) {
@@ -273,28 +303,39 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                 } else if (strncmp(ptr, "DATA", 4) == 0) {
                                     sscanf(command, "%*s %s", buffer_name);
                                     cache_add(buffer_name, cache);
-                                    if ((buffer_id = interest_search(interest_list, buffer_name)) > 0) {
-                                        TCP_send(command, buffer_id);
-                                    } else printf("DATA %s", buffer_name);
+                                    if ((buffer_id = interest_search(interest_list, buffer_name)) >= 0) {
+                                        if (buffer_id != aux->fd) {
+                                            sprintf(buffer,"DATA %s\n",buffer_name);
+                                            TCP_send(buffer, buffer_id);
+                                        } else printf("DATA %s\n", buffer_name);
+                                    }
                                     interest_rm(&interest_list, buffer_name);
 
                                 } else if (strncmp(ptr, "NODATA", 6) == 0) {
 
                                     sscanf(command, "%*s %s", buffer_name);
-                                    if ((buffer_id = interest_search(interest_list, buffer_name)) > 0) {
-                                        TCP_send(command, interest_search(interest_list, buffer_name));
-                                    } else printf("NODATA %s\n", buffer_name);
+                                    if ((buffer_id = interest_search(interest_list, buffer_name)) >= 0) {
+                                        if (buffer_id != aux->fd) {
+                                            sprintf(buffer,"NODATA %s\n",buffer_name);
+                                            TCP_send(buffer, buffer_id);
+                                        } else printf("NODATA %s\n", buffer_name);
+                                    }
                                     interest_rm(&interest_list, buffer_name);
                                 }
+
+
                             } while ((ptr = strtok(NULL, delim)) != NULL);
                         } else printf("No delimeter found, received: %s", command);
                     }
                 }
             }
+            strcpy(buffer, "");
+            strcpy(buffer_name, "");
+            strcpy(command, "");
         }
     } while (strcmp(command, "leave\n") != 0);
 
-    erase_tree(*tree);
+    *tree = erase_tree(*tree);
     close(listen_fd);
     close_list(list);
     cache_free(local, LOCALSIZE);

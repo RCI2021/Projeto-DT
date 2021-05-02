@@ -118,29 +118,31 @@ void ui_create(char *buffer, struct Cache *local, int id) {
     return;
 }
 
-int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tree) {
+struct interest_list *
+ui_get(char *buffer, struct Cache **local, struct Cache **cache, struct interest_list *interestList, exp_tree *tree,
+       int my_id) {
 
     char buffer_name[BUFFERSIZE];
-    int buffer_id;
+    int buffer_id, fd;
 
     if ((sscanf(buffer, "%*s %s", buffer_name) != 1) || sscanf(buffer_name, "%d", &buffer_id) != 1) {
         //Can´t read id & subname
         printf("Wrong file name format, format should be 'get id.subname'\n");
 
-    } else if (cache_search(buffer_name, local) >= 0) printf("DATA %s\n", buffer_name); //Fil
-    else if (cache_search(buffer_name, cache) >= 0)printf("DATA %s\n", buffer_name);
-    else {
-        sprintf(buffer, "INTEREST %s\n", buffer_name);
-        if(find_socket(buffer_id, tree) == -1) printf("Node not found!\n");
-        TCP_send(buffer, find_socket(buffer_id, tree));
+    } else {
+        if (buffer_id == my_id) {
+            if (cache_search(buffer_name, *local) >= 0) printf("DATA %s\n", buffer_name);
+            else printf("NODATA %s", buffer_name);
+        } else {
+            if (cache_search(buffer_name, *cache) >= 0)printf("DATA %s\n", buffer_name);
+            else {
+                sprintf(buffer, "INTEREST %s\n", buffer_name);
+                if ((fd = find_socket(buffer_id, tree)) == -1) printf("Node not found!\n");
+                TCP_send(buffer, fd);
+                interestList = insertInterest(interestList, fd, buffer_name);
+            }
+        }
     }
-
-    return 0;
+    return interestList;
 }
 
-char *str_sep(char *original, int delim) {
-    char *new;
-    new = strchr(original, delim);
-    new++;
-    return new;
-}

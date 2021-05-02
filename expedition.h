@@ -35,6 +35,6 @@ exp_tree *send_tree(exp_tree *tree, int fd,int id);
 
 exp_tree *withdraw_tree(exp_tree *tree, int fd, struct socket_list *list);
 
-void erase_tree(exp_tree *tree);
+exp_tree *erase_tree(exp_tree *tree);
 
 #endif //PROJETO_DT_EXPEDITION_H

@@ -12,7 +12,7 @@ struct socket_list *insertList(struct socket_list *next, int fd) {
 
     struct socket_list *new = NULL;
 
-    new = (struct socket_list *) malloc(sizeof(struct socket_list *)); //TODO check pointer
+    new = (struct socket_list *) malloc(sizeof(struct socket_list));
     /* Check memory allocation errors */
     if (new == NULL)
         return NULL;
@@ -42,10 +42,12 @@ int FD_setlist(struct socket_list *list, fd_set rfds) {
 void freeList(struct socket_list *first) {
     struct socket_list *aux, *next;
 
-    /* Cycle from the first to the last element           */
-    for (aux = first; aux != NULL; aux = next) {
-        next = aux->next;           /* Keep track of the next node */
-        free(aux);                  /* Free current node    */
+    if (first != NULL) {
+        /* Cycle from the first to the last element           */
+        for (aux = first; aux != NULL; aux = next) {
+            next = aux->next;           /* Keep track of the next node */
+            free(aux);                  /* Free current node    */
+        }
     }
 }
 
@@ -142,13 +144,25 @@ int interest_search(struct interest_list *list, char *name) {
 
 void interest_rm(struct interest_list **list, char *name) {
 
-    struct interest_list *aux, *del;
+    struct interest_list *aux = *list, *prev;
+    if ((aux != NULL) && (strcmp(aux->name, name) == 0)) {
 
-    for (aux = *list; aux->next != NULL; aux = aux->next) {
-        if (strcmp(name, aux->next->name) == 0) {
-            del = aux->next;
-            aux->next = aux->next->next;
-            free(del);
-        }
+        *list = aux->next;
+        free(aux);
+        return;
+
     }
+
+    while (aux != NULL && (strcmp(aux->name, name) == 0)) {
+
+        prev = aux;
+        aux = aux->next;
+
+    }
+
+    if (aux == NULL) return;
+
+    prev->next = aux->next;
+
+    free(aux);
 }

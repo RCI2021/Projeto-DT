@@ -21,6 +21,8 @@ int arg_verify(struct my_info *args, int argc, char **argv); //Argument Verifica
 enum state_main command_handle(char *command, struct my_info *args, struct net_info *info); //Command Switcher
 void ui_create(char *buffer, struct Cache *local, int id);
 
-int ui_get(char *buffer, struct Cache *local, struct Cache *cache, exp_tree *tree);
+struct interest_list *
+ui_get(char *buffer, struct Cache **local, struct Cache **cache, struct interest_list *interestList, exp_tree *tree,
+       int my_id);
 
 #endif //PROJETO_DT_USER_INTERFACE_H
