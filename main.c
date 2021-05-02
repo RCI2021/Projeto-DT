@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
 
     struct my_info args;    //Info about myself
     struct net_info info;   //Info about the net I´m in
-    char command[CMDSIZE];  //Command Buffer
-    int ext_fd=0;
+    char command[CMDSIZE], message[10], buffer[2];  //Command Buffer
+    int ext_fd = 0;
     enum state_main state = wait;   //State switch
     struct socket_list *list = NULL;
     exp_tree *tree = NULL;
@@ -50,8 +50,20 @@ int main(int argc, char **argv) {
                 if ((strcmp(info.ext_IP, args.IP) != 0) || (strcmp(info.ext_TCP, args.TCP) != 0)) {
 
                     if ((ext_fd = TCP_client(&info, list, &tree, &args)) <= 0) {
+                        if (ext_fd == -100) {
 
-                        state = err; //Not alone, may connect to other
+                            sprintf(message, "RST %d\n", info.net);
+                            UDP_exch(message, buffer, &args);
+                            if (strcmp(buffer, "OK") == 0) {
+
+                                state = get_nodeslist;
+                                strcpy(info.ext_IP, args.IP);
+                                strcpy(info.ext_TCP, args.TCP);
+
+                            } else state = err;
+
+                        } else
+                            state = err; //Not alone, may connect to other
                         break;
                     }
 
@@ -67,7 +79,7 @@ int main(int argc, char **argv) {
 
             case connected:
                 // printf("CONNECTED\n");
-                if (TCP_server(&args, &info,ext_fd, list, &tree) != 0) {
+                if (TCP_server(&args, &info, ext_fd, list, &tree) != 0) {
                     state = err;
                     break;
                 }

@@ -37,10 +37,16 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
         return -1;
     }
     errcode = connect(fd, res->ai_addr, res->ai_addrlen);
+
+
     if (errcode == -1) {
-        perror("Error connecting to extern node");
-        printf("\tDid you RST your network?");
         freeaddrinfo(res);
+        perror("Error connecting to extern node");
+        printf("\tDo you want to RST your network?");
+        fgets(buffer, 5, stdin);
+        if (strcmp(buffer, "yes\n") == 0) {
+            return -100;
+        }
         return -1;
     }
 
@@ -104,7 +110,8 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
     fd_set rfds_current, rfds;
     struct sockaddr addr;
     socklen_t addrlen;
-    char buffer[138] = "\0", command[138] = "\0", *ptr, buffer_name[128] = "\0", delim[2] = "\n";
+    char buffer[138] = "\0", command[138] = "\0", *ptr, buffer_name[128] = "\0";
+    char delim[2] = "\n", client_IP[IPSIZE] = "\0", client_TCP[TCPSIZE] = "\0";
     struct socket_list *aux = NULL;
     struct interest_list *interest_list = NULL;
     struct Cache *local = NULL, *cache = NULL;
@@ -155,7 +162,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
             perror("Select Error");
             erase_tree(*tree);
             close(listen_fd);
-            close_list(list);
+            close_list(&list);
             cache_free(local, LOCALSIZE);
             cache_free(cache, CACHESIZE);
         }
@@ -215,7 +222,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                             perror("Error Reading from Socket");
                             erase_tree(*tree);
                             close(listen_fd);
-                            close_list(list);
+                            close_list(&list);
                             freeaddrinfo(res);
                             cache_free(local, LOCALSIZE);
                             cache_free(cache, CACHESIZE);
@@ -226,7 +233,12 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
                             printf("Client lost, all nodes connected to socket %d are no longer available\n", aux->fd);
                             *tree = withdraw_tree(*tree, aux->fd, list);//Remove from tree
-                            if (aux->fd == ext_fd) {
+                            FD_CLR(aux->fd, &rfds);
+                            close(aux->fd); //Close the corresponding socket
+                            buffer_id = aux->fd;
+                            remove_socket(&list, aux->fd); //Remove the socket from the list
+
+                            if (buffer_id == ext_fd) {
                                 if ((strcmp(info->rec_IP, args->IP) != 0) ||
                                     (strcmp(info->rec_TCP, args->TCP) != 0)) {
 
@@ -234,32 +246,33 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     strcpy(info->ext_IP, info->rec_IP);
                                     strcpy(info->ext_TCP, info->rec_TCP);
                                     ext_fd = TCP_client(info, list, tree, args);
-                                    sprintf(buffer, "EXTERN %s %s", info->ext_IP, info->ext_TCP);
+                                    sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
                                     TCP_send_all(buffer, list, ext_fd);
 
                                 } else {
-                                    if (list == NULL) {
+
+                                    if ((strcmp(client_IP, "\0") != 0) && (strcmp(client_TCP, "\0") != 0)) {
+
+                                        strcpy(info->ext_IP, client_IP);
+                                        strcpy(info->ext_TCP, client_TCP);
+                                        ext_fd = TCP_client(info, list, tree, args);
+                                        sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
+                                        TCP_send_all(buffer, list, ext_fd);
+                                    } else {
+
                                         strcpy(info->ext_IP, args->IP);
                                         strcpy(info->ext_TCP, args->TCP);
                                         ext_fd = 0;
-                                    } else {
-
-                                        sprintf(buffer, "NEW %s %s", args->IP, args->TCP);
-                                        TCP_send(buffer, list->fd);
-                                        ext_fd = list->fd;
                                     }
                                 }
                             }
-                            FD_CLR(aux->fd, &rfds);
-                            close(aux->fd); //Close the corresponding socket
-                            remove_socket(&list, aux->fd); //Remove the socket from the list
-                            break;
                         } else if ((ptr = strtok(command, delim)) != NULL) {
                             do {
 
                                 if (strncmp(ptr, "NEW", 3) == 0) {
 
-                                    extern_update(info, args, ptr);
+                                    extern_update(info, args, ptr, client_IP, client_TCP);
+
                                     sprintf(buffer, "EXTERN %s %s\n", info->ext_IP, info->ext_TCP);
                                     TCP_send(buffer, aux->fd); //Send Extern message
 
@@ -281,8 +294,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
                                     sscanf(ptr, "%*s %d", &buffer_id);
                                     if (buffer_id != info->id) {
                                         *tree = insert(buffer_id, aux->fd, *tree);
-                                    } else
-                                        printf("Received ADVERTISE with same id, did you add 2 nodes with same id?\n");
+                                    }
 
                                     sprintf(buffer, "ADVERTISE %d\n", buffer_id);
                                     TCP_send_all(buffer, list, aux->fd);
@@ -360,7 +372,7 @@ int TCP_server(struct my_info *args, struct net_info *info, int ext_fd, struct s
 
     *tree = erase_tree(*tree);
     close(listen_fd);
-    close_list(list);
+    close_list(&list);
     cache_free(local, LOCALSIZE);
     cache_free(cache, CACHESIZE);
     return 0;
@@ -406,7 +418,7 @@ int TCP_rcv(int fd, char *buffer) {
     return nread;
 }
 
-int extern_update(struct net_info *info, struct my_info *args, char *buffer) {
+int extern_update(struct net_info *info, struct my_info *args, char *buffer, char *client_IP, char *client_TCP) {
     char aux_IP[IPSIZE], aux_TCP[TCPSIZE];
 
     if (sscanf(buffer, "%*s %s %s", aux_IP, aux_TCP) != 2) {
@@ -419,7 +431,12 @@ int extern_update(struct net_info *info, struct my_info *args, char *buffer) {
         strcpy(info->ext_IP, aux_IP);
         strcpy(info->ext_TCP, aux_TCP);
 
+    } else if ((strcmp(client_IP, "\0") == 0) && (strcmp(client_TCP, "\0") == 0)) {
+
+        sscanf(buffer, "%*s %s %s", client_IP, client_TCP);
+
     }
+
 
     return 0;
 }
