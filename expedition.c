@@ -8,7 +8,14 @@
 #include "net.h"
 
 
-//inserts node in tree of nodes
+
+/**
+ * Function to insert node in tree of nodes
+ * @param id identity of node
+ * @param fd file descriptor associated with node
+ * @param tree AVL tree with net nodes tree
+ * @return tree with new node inserted
+ */
 exp_tree *insert(int id, int fd, exp_tree *tree) {
 
     int h1, h2, h3;
@@ -56,7 +63,11 @@ exp_tree *insert(int id, int fd, exp_tree *tree) {
     return tree;
 }
 
-
+/**
+ * Rotation of part of tree to the right to balance
+ * @param tree part of tree to do rotation of ids
+ * @return result of rotation
+ */
 exp_tree *rotate_right(exp_tree *tree) {
     exp_tree *x, *y, *beta;
 
@@ -73,6 +84,11 @@ exp_tree *rotate_right(exp_tree *tree) {
     return x;
 }
 
+/**
+ * Rotation of part of tree to the left to balance
+ * @param tree part of tree to do rotation of ids
+ * @return result of rotation
+ */
 exp_tree *rotate_left(exp_tree *tree) {
     exp_tree *x, *y, *beta;
 
@@ -89,7 +105,11 @@ exp_tree *rotate_left(exp_tree *tree) {
     return y;
 }
 
-/* checks height of tree */
+/**
+ * Checks the height of AVL tree
+ * @param tree AVL tree of nodes
+ * @return biggest difference in height
+ */
 int height(exp_tree *tree) {
     int hl, hr;
     if (tree == NULL) return 0;
@@ -101,6 +121,12 @@ int height(exp_tree *tree) {
 }
 
 //merges two trees (used when deleting node)
+/**
+ * Function to merge two trees into one
+ * @param a One of the
+ * @param b
+ * @return
+ */
 exp_tree *merge(exp_tree *a, exp_tree *b) {
     if (a == NULL) return b;
     if (b == NULL) return a;
