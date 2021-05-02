@@ -79,9 +79,9 @@ int TCP_client(struct net_info *info, struct socket_list *list, exp_tree **tree,
                 sscanf(ptr, "%*s %d", &buffer_id);
                 *tree = insert(buffer_id, fd, *tree);
 
-            } else printf("Expected Extern or Advertise, Recieved %s", buffer);
+            } else printf("Expected Extern or Advertise, Received %s", buffer);
         } while ((ptr = strtok(NULL, delim)) != NULL);
-    } else printf("Expected Extern or Advertise, Recieved %s", buffer);
+    } else printf("Expected Extern or Advertise, Received %s", buffer);
 
     freeaddrinfo(res);
     return fd;
